@@ -3,7 +3,6 @@
 echo "Script for interactive rewriting of commit messages."
 echo "This script will use 'git rebase -i' to modify Git history."
 echo "Be careful, changing history can have consequences."
-echo "Remember '--force-with-lease'."
 echo ""
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -45,9 +44,6 @@ elif [ "$rebase_choice" == "2" ]; then
     rebase_command="HEAD~"$num_commits
     echo ""
     echo "Starting Git Rebase in interactive mode for the last "$num_commits" commits..."
-else
-    echo "Invalid choice. Please enter 1 or 2."
-    exit 1
 fi
 
 echo ""
@@ -57,20 +53,29 @@ echo "2. To pause after each batch (e.g., 15 commits):"
 echo "   Find the 16th commit in your current batch and change its command to 'edit' (or 'e')."
 echo "   Git will stop at this commit, and the script will give you a choice."
 echo "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file."
-echo "4. Git will sequentially open the editor (Nano) for each 'reword' commit. Rewrite the message, adhering to Conventional Commits."
+echo "4. Git will sequentially open the editor (Nano) for each 'reword' commit. Rewrite the message, adhering to Conventional Commits (https://www.conventionalcommits.org/en/v1.0.0/)."
 echo "   Example: feat(auth): add user login functionality"
 echo "   You will see the commit number and its old message in the editor window."
 echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit."
 echo ""
 read -p "Press Enter to continue and start interactive commit rewriting..."
 
-GIT_SEQUENCE_EDITOR=nano git rebase -i "$rebase_command"
+if [ -n "$GIT_EDITOR" ]; then
+    REBASE_EDITOR="$GIT_EDITOR"
+elif [ -n "$EDITOR" ]; then
+    REBASE_EDITOR="$EDITOR"
+else
+    REBASE_EDITOR="nano"
+fi
+
+GIT_SEQUENCE_EDITOR="$REBASE_EDITOR" git rebase -i "$rebase_command"
 
 while true; do
     if [ -d "$GIT_ROOT/.git/rebase-merge" ]; then
         echo ""
         echo "Git Rebase paused (likely on an 'edit' command or due to conflicts)."
         echo "Please check the status, resolve conflicts (if any), or review changes."
+        git status
         echo ""
         read -p "Choose action: (c) - continue rebase, (a) - abort rebase, (q) - exit script: " user_action
         case "$user_action" in
