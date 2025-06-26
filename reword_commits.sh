@@ -15,7 +15,16 @@ fi
 echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
 echo "1. From the first commit (root)"
 echo "2. Last N commits"
-read -p "Enter 1 or 2: " rebase_choice
+
+rebase_choice=""
+while true; do
+    read -p "Enter 1 or 2: " rebase_choice
+    if [ "$rebase_choice" == "1" ] || [ "$rebase_choice" == "2" ]; then
+        break
+    else
+        echo "Invalid choice. Please enter 1 or 2."
+    fi
+done
 
 rebase_command=""
 
@@ -24,15 +33,18 @@ if [ "$rebase_choice" == "1" ]; then
     echo ""
     echo "Starting Git Rebase in interactive mode for all commits from the beginning..."
 elif [ "$rebase_choice" == "2" ]; then
-    read -p "Enter the number of last commits you want to rewrite (e.g., 5 for the last 5 commits): " num_commits
-
-    if ! [[ "$num_commits" =~ ^[0-9]+$ ]] || [ "$num_commits" -eq 0 ]; then
-        echo "Invalid input. Please enter a positive integer."
-        exit 1
-    fi
-    rebase_command="HEAD~$num_commits"
+    num_commits=""
+    while true; do
+        read -p "Enter the number of last commits you want to rewrite (e.g., 5 for the last 5 commits): " num_commits
+        if [[ "$num_commits" =~ ^[0-9]+$ ]] && [ "$num_commits" -ne 0 ]; then
+            break
+        else
+            echo "Invalid input. Please enter a positive integer."
+        fi
+    done
+    rebase_command="HEAD~"$num_commits
     echo ""
-    echo "Starting Git Rebase in interactive mode for the last $num_commits commits..."
+    echo "Starting Git Rebase in interactive mode for the last "$num_commits" commits..."
 else
     echo "Invalid choice. Please enter 1 or 2."
     exit 1
