@@ -14,14 +14,15 @@ fi
 echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
 echo "1. From the first commit (root)"
 echo "2. Last N commits"
+echo "3. A specific commit by hash"
 
 rebase_choice=""
 while true; do
-    read -p "Enter 1 or 2: " rebase_choice
-    if [ "$rebase_choice" == "1" ] || [ "$rebase_choice" == "2" ]; then
+    read -p "Enter 1, 2 or 3: " rebase_choice
+    if [ "$rebase_choice" == "1" ] || [ "$rebase_choice" == "2" ] || [ "$rebase_choice" == "3" ]; then
         break
     else
-        echo "Invalid choice. Please enter 1 or 2."
+        echo "Invalid choice. Please enter 1, 2 or 3."
     fi
 done
 
@@ -44,17 +45,34 @@ elif [ "$rebase_choice" == "2" ]; then
     rebase_command="HEAD~"$num_commits
     echo ""
     echo "Starting Git Rebase in interactive mode for the last "$num_commits" commits..."
+elif [ "$rebase_choice" == "3" ]; then
+    read -p "Enter the full commit hash you want to reword: " commit_hash
+
+    if [ -z "$commit_hash" ]; then
+        echo "Commit hash cannot be empty."
+        exit 1
+    fi
+
+    if ! git cat-file -e "$commit_hash" 2>/dev/null; then
+        echo "Error: Commit with hash '$commit_hash' does not exist in the repository."
+        exit 1
+    fi
+
+    rebase_command="$commit_hash~1"
+    echo ""
+    echo "Starting Git Rebase in interactive mode to reword commit '$commit_hash'..."
 fi
 
 echo ""
 echo "After opening the editor (default: Nano) with the rebase plan:"
 echo "1. Change 'pick' to 'reword' (or 'r') for commits whose messages you want to change."
+echo "   If you selected 'A specific commit by hash', you will see only that commit. Change its command to 'reword' (or 'r')."
 echo "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes, or to inspect the state):"
 echo "   Locate the commit in your rebase plan where you want to pause and change its command to 'edit' (or 'e')."
 echo "   For example, if you want to rewrite 15 commits, and then pause before the 16th to review, change the 16th commit's command to 'edit'."
 echo "   Git will stop at this 'edit' commit. This script will then give you options to continue or abort."
 echo "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor (default: Nano)."
-echo "4. Git will sequentially open the editor for each 'reword' commit. Rewrite the message, adhering to Conventional Commits (https://www.conventionalcommits.org/en/v1.0.0/)."
+echo "4. Git will sequentially open the editor (default: Nano) for each 'reword' commit. Rewrite the message, adhering to Conventional Commits (https://www.conventionalcommits.org/en/v1.0.0/)."
 echo "   Example: feat(auth): add user login functionality"
 echo "   You will see the commit number and its old message in the editor window."
 echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit."
