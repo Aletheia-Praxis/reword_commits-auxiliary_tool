@@ -11,6 +11,13 @@ if [ -z "$GIT_ROOT" ]; then
     exit 1
 fi
 
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo ""
+    echo "Error: You have uncommitted changes or changes in the index."
+    echo "Please commit or stash them before rewriting Git history."
+    exit 1
+fi
+
 echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
 echo "1. From the first commit (root)"
 echo "2. Last N commits"
