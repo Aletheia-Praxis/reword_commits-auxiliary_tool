@@ -124,7 +124,4 @@ while true; do
     fi
 done
 
-echo "If you have successfully rewritten the commits, you may need to force push changes to the remote repository:"
-echo "git push --force-with-lease"
-echo ""
-echo "Please check your Git history with 'git log --oneline' and, if necessary, execute 'git push --force-with-lease'."
+echo "If you have successfully rewritten the commits, you may need to force push changes to the remote repository. Please check your Git history with 'git log --oneline' and, if necessary, execute 'git push --force-with-lease'."
