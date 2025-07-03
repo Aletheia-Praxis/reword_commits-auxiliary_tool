@@ -5,6 +5,8 @@ echo "This script will use 'git rebase -i' to modify Git history."
 echo "Be careful, changing history can have consequences."
 echo ""
 
+changes_stashed=false
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 if [ -z "$GIT_ROOT" ]; then
     echo "Error: Could not find Git repository root directory."
@@ -13,9 +15,29 @@ fi
 
 if ! git diff --quiet || ! git diff --cached --quiet; then
     echo ""
-    echo "Error: You have uncommitted changes or changes in the index."
-    echo "Please commit or stash them before rewriting Git history."
-    exit 1
+    echo "Warning: You have uncommitted changes or changes in the index."
+    while true; do
+        read -p "Do you want to (s) stash changes and continue, or (e) exit? " stash_choice
+        case "$stash_choice" in
+            s|S)
+                echo "Stashing uncommitted changes..."
+                git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"
+                if [ $? -ne 0 ]; then
+                    echo "Error: Failed to stash changes. Please resolve the issue manually."
+                    exit 1
+                fi
+                changes_stashed=true
+                break
+                ;;
+            e|E)
+                echo "Exiting script. Please commit or discard your changes manually."
+                exit 0
+                ;;
+            *)
+                echo "Invalid choice. Please enter 's' or 'e'."
+                ;;
+        esac
+    done
 fi
 
 echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
@@ -130,5 +152,11 @@ while true; do
         break
     fi
 done
+
+if [ "$changes_stashed" = true ]; then
+    echo ""
+    echo "Remember: You stashed changes before starting the script."
+    echo "Please restore them using 'git stash pop' after you are done."
+fi
 
 echo "If you have successfully rewritten the commits, you may need to force push changes to the remote repository. Please check your Git history with 'git log --oneline' and, if necessary, execute 'git push --force-with-lease'."
