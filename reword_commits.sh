@@ -5,6 +5,30 @@ echo "This script will use 'git rebase -i' to modify Git history."
 echo "Be careful, changing history can have consequences."
 echo ""
 
+CUSTOM_EDITOR=""
+
+while (( "$#" )); do
+    case "$1" in
+        --editor=*)
+            CUSTOM_EDITOR="${1#*=}"
+            shift
+            ;;
+        -e|--editor)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                CUSTOM_EDITOR="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Error: Invalid argument $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
 changes_stashed=false
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -108,7 +132,9 @@ echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the ne
 echo ""
 read -p "Press Enter to continue and start interactive commit rewriting..."
 
-if [ -n "$GIT_EDITOR" ]; then
+if [ -n "$CUSTOM_EDITOR" ]; then
+    REBASE_EDITOR="$CUSTOM_EDITOR"
+elif [ -n "$GIT_EDITOR" ]; then
     REBASE_EDITOR="$GIT_EDITOR"
 elif [ -n "$EDITOR" ]; then
     REBASE_EDITOR="$EDITOR"
