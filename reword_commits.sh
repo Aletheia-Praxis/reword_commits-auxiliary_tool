@@ -6,6 +6,7 @@ display_help() {
     echo ""
     echo "Options:"
     echo "  -h, --help               Show this help message and exit."
+    echo "  -d, --default            Use default Git editor selection (GIT_EDITOR, EDITOR, then nano)."
     echo "  -e <EDITOR>, --editor=<EDITOR>"
     echo "                           Specify the Git editor to use (e.g., nano, vim, code --wait)."
     echo ""
@@ -14,10 +15,12 @@ display_help() {
     echo "  $(basename "$0") --help"
     echo "  $(basename "$0") --editor=vim"
     echo "  $(basename "$0") -e code --wait"
+    echo "  $(basename "$0") --default"
     exit 0
 }
 
 CUSTOM_EDITOR=""
+USE_DEFAULT_EDITOR=false
 
 if [ "$#" -eq 0 ]; then
     display_help
@@ -27,6 +30,10 @@ while (( "$#" )); do
     case "$1" in
         -h|--help)
             display_help
+            ;;
+        -d|--default)
+            USE_DEFAULT_EDITOR=true
+            shift
             ;;
         --editor=*)
             CUSTOM_EDITOR="${1#*=}"
@@ -156,7 +163,15 @@ echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the ne
 echo ""
 read -p "Press Enter to continue and start interactive commit rewriting..."
 
-if [ -n "$CUSTOM_EDITOR" ]; then
+if [ "$USE_DEFAULT_EDITOR" = true ]; then
+    if [ -n "$GIT_EDITOR" ]; then
+        REBASE_EDITOR="$GIT_EDITOR"
+    elif [ -n "$EDITOR" ]; then
+        REBASE_EDITOR="$EDITOR"
+    else
+        REBASE_EDITOR="nano"
+    fi
+elif [ -n "$CUSTOM_EDITOR" ]; then
     REBASE_EDITOR="$CUSTOM_EDITOR"
 elif [ -n "$GIT_EDITOR" ]; then
     REBASE_EDITOR="$GIT_EDITOR"
