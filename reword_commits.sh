@@ -1,14 +1,33 @@
 #!/bin/bash
 
-echo "Script for interactive rewriting of commit messages."
-echo "This script will use 'git rebase -i' to modify Git history."
-echo "Be careful, changing history can have consequences."
-echo ""
+display_help() {
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo "Script for interactively rewriting Git commit messages."
+    echo ""
+    echo "Options:"
+    echo "  -h, --help               Show this help message and exit."
+    echo "  -e <EDITOR>, --editor=<EDITOR>"
+    echo "                           Specify the Git editor to use (e.g., nano, vim, code --wait)."
+    echo ""
+    echo "Examples:"
+    echo "  $(basename "$0")"
+    echo "  $(basename "$0") --help"
+    echo "  $(basename "$0") --editor=vim"
+    echo "  $(basename "$0") -e code --wait"
+    exit 0
+}
 
 CUSTOM_EDITOR=""
 
+if [ "$#" -eq 0 ]; then
+    display_help
+fi
+
 while (( "$#" )); do
     case "$1" in
+        -h|--help)
+            display_help
+            ;;
         --editor=*)
             CUSTOM_EDITOR="${1#*=}"
             shift
@@ -18,7 +37,7 @@ while (( "$#" )); do
                 CUSTOM_EDITOR="$2"
                 shift 2
             else
-                echo "Error: Argument for $1 is missing" >&2
+                echo "Error: Missing argument for $1" >&2
                 exit 1
             fi
             ;;
@@ -28,6 +47,11 @@ while (( "$#" )); do
             ;;
     esac
 done
+
+echo "Script for interactive rewriting of commit messages."
+echo "This script will use 'git rebase -i' to modify Git history."
+echo "Be careful, changing history can have consequences."
+echo ""
 
 changes_stashed=false
 
