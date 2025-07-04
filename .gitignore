@@ -26,5 +26,6 @@
 $RECYCLE.BIN/
 ehthumbs.db
 ehthumbs_vista.db
+env/
 Thumbs.db
 Thumbs.db:encryptable

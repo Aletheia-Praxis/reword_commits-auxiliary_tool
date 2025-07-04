@@ -5,10 +5,63 @@ echo "This script will use 'git rebase -i' to modify Git history."
 echo "Be careful, changing history can have consequences."
 echo ""
 
+CUSTOM_EDITOR=""
+
+while (( "$#" )); do
+    case "$1" in
+        --editor=*)
+            CUSTOM_EDITOR="${1#*=}"
+            shift
+            ;;
+        -e|--editor)
+            if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                CUSTOM_EDITOR="$2"
+                shift 2
+            else
+                echo "Error: Argument for $1 is missing" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Error: Invalid argument $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+changes_stashed=false
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 if [ -z "$GIT_ROOT" ]; then
     echo "Error: Could not find Git repository root directory."
     exit 1
+fi
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo ""
+    echo "Warning: You have uncommitted changes or changes in the index."
+    while true; do
+        read -p "Do you want to (s) stash changes and continue, or (e) exit? " stash_choice
+        case "$stash_choice" in
+            s|S)
+                echo "Stashing uncommitted changes..."
+                git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"
+                if [ $? -ne 0 ]; then
+                    echo "Error: Failed to stash changes. Please resolve the issue manually."
+                    exit 1
+                fi
+                changes_stashed=true
+                break
+                ;;
+            e|E)
+                echo "Exiting script. Please commit or discard your changes manually."
+                exit 0
+                ;;
+            *)
+                echo "Invalid choice. Please enter 's' or 'e'."
+                ;;
+        esac
+    done
 fi
 
 echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
@@ -79,7 +132,9 @@ echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the ne
 echo ""
 read -p "Press Enter to continue and start interactive commit rewriting..."
 
-if [ -n "$GIT_EDITOR" ]; then
+if [ -n "$CUSTOM_EDITOR" ]; then
+    REBASE_EDITOR="$CUSTOM_EDITOR"
+elif [ -n "$GIT_EDITOR" ]; then
     REBASE_EDITOR="$GIT_EDITOR"
 elif [ -n "$EDITOR" ]; then
     REBASE_EDITOR="$EDITOR"
@@ -124,7 +179,10 @@ while true; do
     fi
 done
 
-echo "If you have successfully rewritten the commits, you may need to force push changes to the remote repository:"
-echo "git push --force-with-lease"
-echo ""
-echo "Please check your Git history with 'git log --oneline' and, if necessary, execute 'git push --force-with-lease'."
+if [ "$changes_stashed" = true ]; then
+    echo ""
+    echo "Remember: You stashed changes before starting the script."
+    echo "Please restore them using 'git stash pop' after you are done."
+fi
+
+echo "If you have successfully rewritten the commits, you may need to force push changes to the remote repository. Please check your Git history with 'git log --oneline' and, if necessary, execute 'git push --force-with-lease'."
