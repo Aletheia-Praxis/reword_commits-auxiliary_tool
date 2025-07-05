@@ -163,22 +163,18 @@ echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the ne
 echo ""
 read -p "Press Enter to continue and start interactive commit rewriting..."
 
-if [ "$USE_DEFAULT_EDITOR" = true ]; then
-    if [ -n "$GIT_EDITOR" ]; then
-        REBASE_EDITOR="$GIT_EDITOR"
-    elif [ -n "$EDITOR" ]; then
-        REBASE_EDITOR="$EDITOR"
-    else
-        REBASE_EDITOR="nano"
-    fi
-elif [ -n "$CUSTOM_EDITOR" ]; then
-    REBASE_EDITOR="$CUSTOM_EDITOR"
-elif [ -n "$GIT_EDITOR" ]; then
+REBASE_EDITOR=""
+
+if [ -n "$GIT_EDITOR" ]; then
     REBASE_EDITOR="$GIT_EDITOR"
 elif [ -n "$EDITOR" ]; then
     REBASE_EDITOR="$EDITOR"
 else
     REBASE_EDITOR="nano"
+fi
+
+if [ "$USE_DEFAULT_EDITOR" = false ] && [ -n "$CUSTOM_EDITOR" ]; then
+    REBASE_EDITOR="$CUSTOM_EDITOR"
 fi
 
 GIT_SEQUENCE_EDITOR="$REBASE_EDITOR" git rebase -i "$rebase_command"
