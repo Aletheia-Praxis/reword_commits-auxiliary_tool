@@ -70,5 +70,36 @@ test_determine_git_editor_default() {
   assertEquals "nano" "$result"
 }
 
+# Test for get_stash_choice with 's' input
+
+test_get_stash_choice_stash() {
+  (echo "s") | {
+    local result=$(get_stash_choice)
+    assertEquals "s" "$result"
+  }
+}
+
+# Test for get_stash_choice with 'e' input
+
+test_get_stash_choice_exit() {
+  (echo "e") | {
+    local result=$(get_stash_choice)
+    assertEquals "e" "$result"
+  }
+}
+
+# Test for get_stash_choice with invalid then valid input
+
+test_get_stash_choice_invalid_then_stash() {
+  (echo "x"; echo "s") | {
+    local result=$(get_stash_choice)
+    assertEquals "s" "$result"
+  }
+}
+
+# Structure for handle_paused_rebase (mocking git)
+# Full-fledged testing of handle_paused_rebase requires complex mocking of git and the file system,
+# so here is only a template for future integration tests.
+
 # Run shunit2
 . "$SHUNIT2_PATH" 
