@@ -97,6 +97,51 @@ test_get_stash_choice_invalid_then_stash() {
   }
 }
 
+# Test for get_rebase_option with invalid then valid input
+
+test_get_rebase_option_invalid_then_valid() {
+  (echo "x"; echo "4"; echo "2") | {
+    local result=$(get_rebase_option)
+    assertEquals "2" "$result"
+  }
+}
+
+# Test for get_num_commits with invalid then valid input
+
+test_get_num_commits_invalid_then_valid() {
+  (echo "-1"; echo "abc"; echo "0"; echo "3") | {
+    local result=$(get_num_commits)
+    assertEquals "3" "$result"
+  }
+}
+
+# Test for get_stash_choice with uppercase S
+
+test_get_stash_choice_uppercase_S() {
+  (echo "S") | {
+    local result=$(get_stash_choice)
+    assertEquals "s" "$result"
+  }
+}
+
+# Test for get_stash_choice with uppercase E
+
+test_get_stash_choice_uppercase_E() {
+  (echo "E") | {
+    local result=$(get_stash_choice)
+    assertEquals "e" "$result"
+  }
+}
+
+# Test for get_stash_choice with multiple invalid then valid input
+
+test_get_stash_choice_multiple_invalid_then_exit() {
+  (echo "foo"; echo "bar"; echo "e") | {
+    local result=$(get_stash_choice)
+    assertEquals "e" "$result"
+  }
+}
+
 # Structure for handle_paused_rebase (mocking git)
 # Full-fledged testing of handle_paused_rebase requires complex mocking of git and the file system,
 # so here is only a template for future integration tests.
