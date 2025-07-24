@@ -6,7 +6,7 @@
 SHUNIT2_PATH="$(dirname "$0")/shunit2/shunit2"
 
 # Import functions for testing
-source "./reword_commits.sh"
+source "$(dirname "$0")/../reword_commits.sh"
 
 # Mock the read function for get_rebase_option
 mock_read() {
