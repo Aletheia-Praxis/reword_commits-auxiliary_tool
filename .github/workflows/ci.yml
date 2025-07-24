@@ -24,4 +24,6 @@ jobs:
         run: chmod +x tests/test_reword_commits.sh
 
       - name: Run bash tests (shunit2)
-        run: ./tests/test_reword_commits.sh 
+        run: |
+          set -x
+          ./tests/test_reword_commits.sh || (echo '=== TEST OUTPUT ===' && cat tests/test_reword_commits.sh && exit 1) 
