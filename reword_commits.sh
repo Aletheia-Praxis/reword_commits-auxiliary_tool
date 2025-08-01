@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -eo pipefail
-
 display_help() {
     echo "Usage: $(basename "$0") [OPTIONS]"
     echo "Script for interactively rewriting Git commit messages."
@@ -28,7 +26,7 @@ get_rebase_option() {
             echo "$choice"
             break
         else
-            echo "Invalid choice. Please enter 1, 2 or 3."
+            echo "Invalid choice. Please enter 1, 2 or 3." >&2
         fi
     done
 }
@@ -41,7 +39,7 @@ get_num_commits() {
             echo "$num_commits"
             break
         else
-            echo "Invalid input. Please enter a positive integer."
+            echo "Invalid input. Please enter a positive integer." >&2
         fi
     done
 }
@@ -60,13 +58,16 @@ get_stash_choice() {
                 break
                 ;;
             *)
-                echo "Invalid choice. Please enter 's' or 'e'."
+                echo "Invalid choice. Please enter 's' or 'e'." >&2
                 ;;
         esac
     done
 }
 
 determine_git_editor() {
+    local USE_DEFAULT_EDITOR="$1"
+    local CUSTOM_EDITOR="$2"
+
     if [ "$USE_DEFAULT_EDITOR" = false ] && [ -n "$CUSTOM_EDITOR" ]; then
         echo "$CUSTOM_EDITOR"
     elif [ -n "$GIT_EDITOR" ]; then
@@ -77,9 +78,6 @@ determine_git_editor() {
         echo "nano"
     fi
 }
-
-CUSTOM_EDITOR=""
-USE_DEFAULT_EDITOR=false
 
 handle_paused_rebase() {
     local user_action=""
@@ -120,9 +118,13 @@ handle_paused_rebase() {
 }
 
 main() {
+    set -eo pipefail
     if [ "$#" -eq 0 ]; then
         display_help
     fi
+
+    local CUSTOM_EDITOR=""
+    local USE_DEFAULT_EDITOR=false
 
     while (( "$#" )); do
         case "$1" in
@@ -246,7 +248,7 @@ main() {
     echo ""
     read -p "Press Enter to continue and start interactive commit rewriting..."
 
-    local REBASE_EDITOR=$(determine_git_editor)
+    local REBASE_EDITOR=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
 
     GIT_SEQUENCE_EDITOR="$REBASE_EDITOR" git rebase -i "$rebase_command"
 

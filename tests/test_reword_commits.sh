@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 # tests/test_reword_commits.sh
 
 # Add path to shunit2
@@ -32,41 +34,41 @@ test_get_num_commits_valid() {
 # Test for determine_git_editor with CUSTOM_EDITOR
 
 test_determine_git_editor_custom() {
-  CUSTOM_EDITOR="vim"
-  USE_DEFAULT_EDITOR=false
-  local result=$(determine_git_editor)
+  local CUSTOM_EDITOR="vim"
+  local USE_DEFAULT_EDITOR=false
+  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "vim" "$result"
 }
 
 # Test for determine_git_editor with GIT_EDITOR
 
 test_determine_git_editor_git_env() {
-  CUSTOM_EDITOR=""
-  USE_DEFAULT_EDITOR=false
-  GIT_EDITOR="nano"
-  local result=$(determine_git_editor)
+  local CUSTOM_EDITOR=""
+  local USE_DEFAULT_EDITOR=false
+  local GIT_EDITOR="nano"
+  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "nano" "$result"
 }
 
 # Test for determine_git_editor with EDITOR
 
 test_determine_git_editor_editor_env() {
-  CUSTOM_EDITOR=""
-  USE_DEFAULT_EDITOR=false
-  GIT_EDITOR=""
-  EDITOR="micro"
-  local result=$(determine_git_editor)
+  local CUSTOM_EDITOR=""
+  local USE_DEFAULT_EDITOR=false
+  local GIT_EDITOR=""
+  local EDITOR="micro"
+  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "micro" "$result"
 }
 
 # Test for determine_git_editor with default
 
 test_determine_git_editor_default() {
-  CUSTOM_EDITOR=""
-  USE_DEFAULT_EDITOR=false
-  GIT_EDITOR=""
-  EDITOR=""
-  local result=$(determine_git_editor)
+  local CUSTOM_EDITOR=""
+  local USE_DEFAULT_EDITOR=false
+  local GIT_EDITOR=""
+  local EDITOR=""
+  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "nano" "$result"
 }
 
