@@ -13,17 +13,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install bash and git
-        run: sudo apt-get update && sudo apt-get install -y bash git
+      - name: Install bash, git, and shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bash git shellcheck
 
       - name: Install shunit2
         run: |
           git submodule update --init --recursive
 
-      - name: Make test script executable
-        run: chmod +x tests/test_reword_commits.sh
+      - name: Make scripts executable
+        run: |
+          chmod +x reword_commits.sh
+          chmod +x tests/test_reword_commits.sh
+
+      - name: Run ShellCheck on scripts
+        run: |
+          shellcheck reword_commits.sh
+          shellcheck tests/test_reword_commits.sh
 
       - name: Run bash tests (shunit2)
         run: |
-          set -x
-          ./tests/test_reword_commits.sh || (echo '=== TEST OUTPUT ===' && cat tests/test_reword_commits.sh && exit 1) 
+          ./tests/test_reword_commits.sh 
