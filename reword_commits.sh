@@ -21,7 +21,7 @@ display_help() {
 get_rebase_option() {
     local choice=""
     while true; do
-        read -p "Enter 1, 2 or 3: " choice
+        read -r -p "Enter 1, 2 or 3: " choice
         if [[ "$choice" == "1" || "$choice" == "2" || "$choice" == "3" ]]; then
             echo "$choice"
             break
@@ -34,7 +34,7 @@ get_rebase_option() {
 get_num_commits() {
     local num_commits=""
     while true; do
-        read -p "Enter the number of last commits you want to rewrite (e.g., 5 for the last 5 commits): " num_commits
+        read -r -p "Enter the number of last commits you want to rewrite (e.g., 5 for the last 5 commits): " num_commits
         if [[ "$num_commits" =~ ^[0-9]+$ ]] && [ "$num_commits" -ne 0 ]; then
             echo "$num_commits"
             break
@@ -47,7 +47,7 @@ get_num_commits() {
 get_stash_choice() {
     local stash_choice=""
     while true; do
-        read -p "Do you want to (s) stash changes and continue, or (e) exit? " stash_choice
+        read -r -p "Do you want to (s) stash changes and continue, or (e) exit? " stash_choice
         case "$stash_choice" in
             s|S)
                 echo "s"
@@ -88,12 +88,12 @@ handle_paused_rebase() {
             echo "Please check the status, resolve conflicts (if any), or review changes."
             git status
             echo ""
-            read -p "Choose action: (c) - continue rebase, (a) - abort rebase, (q) - exit script: " user_action
+            read -r -p "Choose action: (c) - continue rebase, (a) - abort rebase, (q) - exit script: " user_action
             case "$user_action" in
                 c|C)
                     git rebase --continue
-                    if [ $? -ne 0 ]; then
-                        echo "Error continuing rebase. Please resolve conflicts manually or abort rebase."
+                    if ! git rebase --continue; then
+                        echo "Error continuing rebase. Please resolve conflicts manually or abort rebase." >&2
                     fi
                     ;;
                 a|A)
@@ -162,22 +162,23 @@ main() {
 
     local changes_stashed=false
 
-    readonly GIT_ROOT=$(git rev-parse --show-toplevel)
+    local GIT_ROOT
+    GIT_ROOT=$(git rev-parse --show-toplevel)
     if [ -z "$GIT_ROOT" ]; then
-        echo "Error: Could not find Git repository root directory."
+        echo "Error: Could not find Git repository root directory." >&2
         exit 1
     fi
 
     if ! git diff --quiet || ! git diff --cached --quiet; then
         echo ""
-        echo "Warning: You have uncommitted changes or changes in the index."
-        local stash_choice=$(get_stash_choice)
+        echo "Warning: You have uncommitted changes or changes in the index." >&2
+        local stash_choice
+        stash_choice=$(get_stash_choice)
         case "$stash_choice" in
             s|S)
                 echo "Stashing uncommitted changes..."
-                git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"
-                if [ $? -ne 0 ]; then
-                    echo "Error: Failed to stash changes. Please resolve the issue manually."
+                if ! git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"; then
+                    echo "Error: Failed to stash changes. Please resolve the issue manually." >&2
                     exit 1
                 fi
                 changes_stashed=true
@@ -194,7 +195,8 @@ main() {
     echo "2. Last N commits"
     echo "3. A specific commit by hash"
 
-    local rebase_choice=$(get_rebase_option)
+    local rebase_choice
+    rebase_choice=$(get_rebase_option)
 
     local rebase_command=""
 
@@ -203,15 +205,16 @@ main() {
         echo ""
         echo "Starting Git Rebase in interactive mode for all commits from the beginning..."
     elif [ "$rebase_choice" == "2" ]; then
-        local num_commits=$(get_num_commits)
-        rebase_command="HEAD~"$num_commits
+        local num_commits
+        num_commits=$(get_num_commits)
+        rebase_command="HEAD~$num_commits"
         echo ""
-        echo "Starting Git Rebase in interactive mode for the last "$num_commits" commits..."
+        echo "Starting Git Rebase in interactive mode for the last ${num_commits} commits..."
     elif [ "$rebase_choice" == "3" ]; then
-        read -p "Enter the full commit hash you want to reword: " commit_hash
+        read -r -p "Enter the full commit hash you want to reword: " commit_hash
 
         if [ -z "$commit_hash" ]; then
-            echo "Commit hash cannot be empty."
+            echo "Commit hash cannot be empty." >&2
             exit 1
         fi
 
@@ -246,9 +249,10 @@ main() {
     echo "   You will see the commit number and its old message in the editor window."
     echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit."
     echo ""
-    read -p "Press Enter to continue and start interactive commit rewriting..."
+    read -r -p "Press Enter to continue and start interactive commit rewriting..."
 
-    local REBASE_EDITOR=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
+    local REBASE_EDITOR
+    REBASE_EDITOR=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
 
     GIT_SEQUENCE_EDITOR="$REBASE_EDITOR" git rebase -i "$rebase_command"
 
@@ -266,4 +270,4 @@ main() {
     echo "'git push --force-with-lease'."
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && main "$@"
+[[ "$0" == "$BASH_SOURCE" ]] && main "${@}"
