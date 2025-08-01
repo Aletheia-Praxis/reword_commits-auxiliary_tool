@@ -270,4 +270,4 @@ main() {
     echo "'git push --force-with-lease'."
 }
 
-[[ "$0" == "$BASH_SOURCE" ]] && main "${@}"
+[[ "$0" == "${BASH_SOURCE[0]}" ]] && main "${@}"

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# shellcheck disable=SC1090,SC1091
+
 set -x
 
 # tests/test_reword_commits.sh
@@ -18,7 +20,8 @@ mock_read() {
 # Test for get_rebase_option (valid input)
 test_get_rebase_option_valid() {
   (echo "2") | {
-    local result=$(get_rebase_option)
+    local result
+    result=$(get_rebase_option)
     assertEquals "2" "$result"
   }
 }
@@ -26,7 +29,8 @@ test_get_rebase_option_valid() {
 # Test for get_num_commits (valid input)
 test_get_num_commits_valid() {
   (echo "5") | {
-    local result=$(get_num_commits)
+    local result
+    result=$(get_num_commits)
     assertEquals "5" "$result"
   }
 }
@@ -36,7 +40,8 @@ test_get_num_commits_valid() {
 test_determine_git_editor_custom() {
   local CUSTOM_EDITOR="vim"
   local USE_DEFAULT_EDITOR=false
-  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
+  local result
+  result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "vim" "$result"
 }
 
@@ -45,8 +50,10 @@ test_determine_git_editor_custom() {
 test_determine_git_editor_git_env() {
   local CUSTOM_EDITOR=""
   local USE_DEFAULT_EDITOR=false
+  # shellcheck disable=SC2034
   local GIT_EDITOR="nano"
-  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
+  local result
+  result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "nano" "$result"
 }
 
@@ -55,9 +62,12 @@ test_determine_git_editor_git_env() {
 test_determine_git_editor_editor_env() {
   local CUSTOM_EDITOR=""
   local USE_DEFAULT_EDITOR=false
+  # shellcheck disable=SC2034
   local GIT_EDITOR=""
+  # shellcheck disable=SC2034
   local EDITOR="micro"
-  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
+  local result
+  result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "micro" "$result"
 }
 
@@ -66,9 +76,12 @@ test_determine_git_editor_editor_env() {
 test_determine_git_editor_default() {
   local CUSTOM_EDITOR=""
   local USE_DEFAULT_EDITOR=false
+  # shellcheck disable=SC2034
   local GIT_EDITOR=""
+  # shellcheck disable=SC2034
   local EDITOR=""
-  local result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
+  local result
+  result=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR")
   assertEquals "nano" "$result"
 }
 
@@ -76,7 +89,8 @@ test_determine_git_editor_default() {
 
 test_get_stash_choice_stash() {
   (echo "s") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "s" "$result"
   }
 }
@@ -85,7 +99,8 @@ test_get_stash_choice_stash() {
 
 test_get_stash_choice_exit() {
   (echo "e") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "e" "$result"
   }
 }
@@ -94,7 +109,8 @@ test_get_stash_choice_exit() {
 
 test_get_stash_choice_invalid_then_stash() {
   (echo "x"; echo "s") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "s" "$result"
   }
 }
@@ -103,7 +119,8 @@ test_get_stash_choice_invalid_then_stash() {
 
 test_get_rebase_option_invalid_then_valid() {
   (echo "x"; echo "4"; echo "2") | {
-    local result=$(get_rebase_option)
+    local result
+    result=$(get_rebase_option)
     assertEquals "2" "$result"
   }
 }
@@ -112,7 +129,8 @@ test_get_rebase_option_invalid_then_valid() {
 
 test_get_num_commits_invalid_then_valid() {
   (echo "-1"; echo "abc"; echo "0"; echo "3") | {
-    local result=$(get_num_commits)
+    local result
+    result=$(get_num_commits)
     assertEquals "3" "$result"
   }
 }
@@ -121,7 +139,8 @@ test_get_num_commits_invalid_then_valid() {
 
 test_get_stash_choice_uppercase_S() {
   (echo "S") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "s" "$result"
   }
 }
@@ -130,7 +149,8 @@ test_get_stash_choice_uppercase_S() {
 
 test_get_stash_choice_uppercase_E() {
   (echo "E") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "e" "$result"
   }
 }
@@ -139,7 +159,8 @@ test_get_stash_choice_uppercase_E() {
 
 test_get_stash_choice_multiple_invalid_then_exit() {
   (echo "foo"; echo "bar"; echo "e") | {
-    local result=$(get_stash_choice)
+    local result
+    result=$(get_stash_choice)
     assertEquals "e" "$result"
   }
 }
