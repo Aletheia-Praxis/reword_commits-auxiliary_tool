@@ -6,6 +6,11 @@ This script provides an interactive way to rewrite Git commit messages using `gi
 
 The main goal of this script is to offer a user-friendly interface for an otherwise complex Git operation: interactively rebasing commits to change their messages. It guides the user through the process, from selecting which commits to reword to handling potential pauses during the rebase.
 
+## Prerequisites
+
+*   Git installed on your system.
+*   A basic understanding of Git commands.
+
 ## Options
 
 *   `-h`, `--help`: Show the help message and exit.
@@ -37,35 +42,40 @@ The script performs the following key functions:
     ```bash
     chmod +x reword_commits.sh
     ```
-3.  **Run the Script**: Execute the script from your terminal within your Git repository. You can specify an editor or use the default:
+3.  **Run the Script**: Execute the script from your terminal within your Git repository, optionally specifying an editor:
     ```bash
     ./reword_commits.sh
     ./reword_commits.sh --editor=vim
     ./reword_commits.sh -e code --wait
     ./reword_commits.sh --default
     ```
-4.  **Handle Uncommitted Changes (if prompted)**: If you have uncommitted changes, the script will ask you to `(s) stash` them or `(e) exit`. Choose `s` to temporarily save your changes and proceed, or `e` to exit and handle them manually.
-5.  **Choose Rebase Option**: Follow the prompts to select how you want to rewrite your history:
-    *   `1`: From the first commit (root).
-    *   `2`: For the last N commits (you'll be asked for the number).
-    *   `3`: For a specific commit by its full hash (you'll be asked for the commit hash).
-6.  **Interactive Editor Instructions**: Read the on-screen instructions carefully before pressing Enter to proceed. These instructions explain how to modify the rebase plan in your default text editor (e.g., Nano, Vim, VS Code).
-    *   Change `pick` to `reword` (or `r`) for any commit you wish to modify its message.
-    *   Change `pick` to `edit` (or `e`) if you want to pause the rebase at a specific commit to make other changes or resolve conflicts. If you choose this, the script will pause and provide options to continue or abort.
-7.  **Rewrite Commit Messages**: For each commit marked `reword`, your editor will open. Change the commit message as desired, adhering to Conventional Commits standards (e.g., `feat(scope): descriptive message`). Save and close the editor for each message.
-8.  **Handle Pauses (if any)**: If the rebase pauses (e.g., due to an `edit` command or conflicts), the script will prompt you to:
-    *   `c`: Continue the rebase (after resolving any conflicts manually).
-    *   `a`: Abort the rebase.
-    *   `q`: Exit the script, leaving the rebase in a paused state.
-9.  **Restore Stashed Changes (if applicable)**: If you stashed changes at the beginning, the script will remind you to restore them using `git stash pop` after the rebase is complete.
-10. **Force Push (if needed)**: After the rebase completes, if you have pushed these commits previously, you will likely need to force push your changes to the remote repository:
+4.  **Handle Uncommitted Changes (if prompted)**: If you have uncommitted changes, the script will prompt you to `(s) stash` them or `(e) exit`. Choose `s` to temporarily save your changes and proceed, or `e` to exit and handle them manually.
+5.  **Choose Rebase Option**: Follow the on-screen prompts to select how you want to rewrite your history:
+    *   Enter `1` to reword commits from the first commit (root).
+    *   Enter `2` to reword the last N commits (you'll be asked for the number).
+    *   Enter `3` to reword a specific commit by its full hash (you'll be asked for the commit hash).
+6.  **Interactive Editor Instructions**: Carefully read the on-screen instructions before pressing Enter. These instructions explain how to modify the rebase plan in your default text editor (e.g., Nano, Vim, VS Code).
+    *   To modify a commit message, change `pick` to `reword` (or `r`) next to the commit hash.
+    *   To pause the rebase at a specific commit for inspection, conflict resolution, or making additional changes, change `pick` to `edit` (or `e`). If you choose this, the script will pause and provide options to continue or abort.
+7.  **Rewrite Commit Messages**: For each commit you marked `reword`, your configured editor will open. Change the commit message as desired, adhering to [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standards (e.g., `feat(scope): descriptive message`). Save and close the editor file to proceed to the next commit or complete the rebase.
+8.  **Handle Pauses (if any)**: If the rebase pauses (e.g., due to an `edit` command or merge conflicts), the script will prompt you to:
+    *   Enter `c` to continue the rebase (after resolving any conflicts manually and staging the changes).
+    *   Enter `a` to abort the rebase, discarding all changes made during the rebase process.
+    *   Enter `q` to exit the script, leaving the rebase in a paused state for manual intervention.
+9.  **Restore Stashed Changes (if applicable)**: If you stashed changes at the beginning of the process, the script will remind you to restore them using `git stash pop` after the rebase is successfully completed.
+10. **Force Push (if needed)**: After the rebase completes, if you have pushed these commits to a remote repository previously, you **must** force push your changes. Always check your Git history first with `git log --oneline` before force pushing:
     ```bash
     git push --force-with-lease
     ```
-    Always check your Git history first with `git log --oneline` before force pushing.
+
+## Troubleshooting
+
+*   **Rebase Conflicts**: If `git rebase` encounters conflicts, resolve them manually, `git add` the resolved files, and then choose `c` (continue) when prompted by the script.
+*   **Editor Issues**: Ensure your specified editor (with `--editor`) is correctly configured and accessible in your PATH. If using `code --wait` for VS Code, ensure the `code` command is available.
+*   **Script Exited Unexpectedly**: If the script exits and leaves Git in a rebase state, you can manually `git rebase --continue`, `git rebase --abort`, or `git rebase --quit` to resolve it.
 
 ## Important Notes
 
-*   **Caution with History Rewriting**: Rewriting Git history can have significant consequences, especially if you are working on a shared branch. Always ensure you understand the implications before proceeding.
-*   **Backup**: Consider backing up your branch or repository before performing extensive history rewriting.
-*   **Conventional Commits**: It is highly recommended to follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for clear and consistent commit messages.
+*   **Caution with History Rewriting**: Rewriting Git history can have significant consequences, especially if you are working on a shared branch. Always ensure you understand the implications before proceeding, as it changes the commit IDs for the rewritten commits.
+*   **Backup**: Consider backing up your branch or repository before performing extensive history rewriting. You can create a new branch as a backup using `git branch <backup-branch-name>`.
+*   **Conventional Commits**: It is highly recommended to follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for clear, consistent, and automated changelog generation.
