@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install bash, git, and shellcheck
+      - name: Install bash and git
         run: |
           sudo apt-get update
-          sudo apt-get install -y bash git shellcheck
+          sudo apt-get install -y bash git
 
       - name: Install shunit2
         run: |
@@ -27,11 +27,6 @@ jobs:
           chmod +x reword_commits.sh
           chmod +x tests/test_reword_commits.sh
 
-      - name: Run ShellCheck on scripts
-        run: |
-          shellcheck reword_commits.sh
-          shellcheck tests/test_reword_commits.sh
-
       - name: Run bash tests (shunit2)
         run: |
-          ./tests/test_reword_commits.sh 
+          ./tests/test_reword_commits.sh
