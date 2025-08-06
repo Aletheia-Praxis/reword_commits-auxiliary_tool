@@ -340,7 +340,7 @@ main() {
     GIT_SEQUENCE_EDITOR="$REBASE_EDITOR" git rebase -i "$rebase_command"
 
     # Call handle_paused_rebase after the initial rebase command, in case it pauses for 'edit' or conflicts.
-    handle_paused_rebase
+    handle_paused_rebase "$GIT_ROOT"
 
     # If changes were stashed at the beginning, remind the user to pop them.
     if [[ "$changes_stashed" = true ]]; then
