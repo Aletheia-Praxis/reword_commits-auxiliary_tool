@@ -224,9 +224,12 @@ main() {
 
     local changes_stashed=false # Flag to track if changes were stashed.
 
-    local GIT_ROOT # Declare GIT_ROOT as a local variable.
-    # git rev-parse --show-toplevel: Finds the root directory of the current Git repository.
+    # Declare GIT_ROOT as a local variable. Its value is determined by `git rev-parse --show-toplevel`,
+    # which finds the root directory of the current Git repository.
+    local GIT_ROOT
     GIT_ROOT=$(git rev-parse --show-toplevel)
+    # Mark GIT_ROOT as readonly to ensure its immutability after initialization.
+    readonly GIT_ROOT
     if [ -z "$GIT_ROOT" ]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
         echo "Error: Could not find Git repository root directory." >&2
         exit 1
@@ -325,8 +328,11 @@ main() {
     echo ""
     read -r -p "Press Enter to continue and start interactive commit rewriting..."
 
-    local REBASE_EDITOR # Local variable for the editor to use for rebase.
-    REBASE_EDITOR=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR") # Determine editor.
+    # Declare REBASE_EDITOR as a local variable. Its value is determined by the `determine_git_editor` function.
+    local REBASE_EDITOR
+    REBASE_EDITOR=$(determine_git_editor "$USE_DEFAULT_EDITOR" "$CUSTOM_EDITOR") # Determine the editor to use for rebase.
+    # Mark REBASE_EDITOR as readonly to ensure its immutability after initialization.
+    readonly REBASE_EDITOR
 
     # GIT_SEQUENCE_EDITOR: Environment variable that specifies the editor Git will use for interactive rebase.
     # This ensures that the determined editor is used for the rebase plan and individual commit messages.
