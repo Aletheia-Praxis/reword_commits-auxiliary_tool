@@ -57,7 +57,7 @@ get_num_commits() {
         # Check if input is a digit and greater than zero.
         # =~ ^[0-9]+$ checks if the variable contains only digits.
         # -ne 0 checks if the number is not zero.
-        if [[ "$num_commits" =~ ^[0-9]+$ ]] && [ "$num_commits" -ne 0 ]; then
+        if [[ "$num_commits" =~ ^[0-9]+$ ]] && [[ "$num_commits" -ne 0 ]]; then
             printf "%s\n" "$num_commits" # Output the valid number.
             break # Exit the loop.
         else
@@ -101,13 +101,13 @@ determine_git_editor() {
     local CUSTOM_EDITOR="$2" # Local variable for clarity.
 
     # If --default is not used AND a custom editor is provided via arguments, use it.
-    if [ "$USE_DEFAULT_EDITOR" = false ] && [ -n "$CUSTOM_EDITOR" ]; then
+    if [[ "$USE_DEFAULT_EDITOR" = false ]] && [[ -n "$CUSTOM_EDITOR" ]]; then
         printf "%s\n" "$CUSTOM_EDITOR"
     # If GIT_EDITOR environment variable is set, use it. Git's preferred editor.
-    elif [ -n "$GIT_EDITOR" ]; then
+    elif [[ -n "$GIT_EDITOR" ]]; then
         printf "%s\n" "$GIT_EDITOR"
     # If EDITOR environment variable is set, use it. Generic editor for many programs.
-    elif [ -n "$EDITOR" ]; then
+    elif [[ -n "$EDITOR" ]]; then
         printf "%s\n" "$EDITOR"
     # Fallback to 'nano' if no custom editor, GIT_EDITOR, or EDITOR is defined.
     else
@@ -127,7 +127,7 @@ handle_paused_rebase() {
     while true; do # Loop until rebase is completed or script exits.
         # Check for the existence of the rebase-merge directory within .git,
         # which indicates an ongoing/paused rebase operation.
-        if [ -d "$GIT_ROOT/.git/rebase-merge" ]; then
+        if [[ -d "$GIT_ROOT/.git/rebase-merge" ]]; then
             printf "\n"
             printf "Git Rebase paused (likely on an 'edit' command or due to conflicts).\n"
             printf "Please check the status, resolve conflicts (if any), or review changes.\n"
@@ -179,7 +179,7 @@ main() {
     set -eo pipefail
 
     # If no arguments are provided to the script, display help and exit.
-    if [ "$#" -eq 0 ]; then
+    if [[ "$#" -eq 0 ]]; then
         display_help
     fi
 
@@ -202,7 +202,7 @@ main() {
                 ;;
             -e|--editor) # Short or long option for editor requiring a separate argument.
                 # Check if the next argument ($2) exists and doesn't start with a hyphen (another option).
-                if [ -n "$2" ] && [ "${2:0:1}" != "-" ]; then
+                if [[ -n "$2" ]] && [[ "${2:0:1}" != "-" ]]; then
                     CUSTOM_EDITOR="$2" # Assign the next argument as the custom editor.
                     shift 2 # Consume both the option and its value.
                 else
@@ -230,7 +230,7 @@ main() {
     GIT_ROOT=$(git rev-parse --show-toplevel)
     # Mark GIT_ROOT as readonly to ensure its immutability after initialization.
     readonly GIT_ROOT
-    if [ -z "$GIT_ROOT" ]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
+    if [[ -z "$GIT_ROOT" ]]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
         printf "Error: Could not find Git repository root directory.\n" >&2
         exit 1
     fi
@@ -272,22 +272,22 @@ main() {
 
     local rebase_command="" # Variable to store the argument for git rebase -i.
 
-    if [ "$rebase_choice" == "1" ]; then
+    if [[ "$rebase_choice" == "1" ]]; then
         rebase_command="--root" # --root rebases all commits from the beginning.
         printf "\n"
         printf "Starting Git Rebase in interactive mode for all commits from the beginning...\n"
-    elif [ "$rebase_choice" == "2" ]; then
+    elif [[ "$rebase_choice" == "2" ]]; then
         local num_commits # Local variable for number of commits.
         num_commits=$(get_num_commits) # Get number of commits from helper function.
         # HEAD~$num_commits specifies the last N commits relative to HEAD.
         rebase_command="HEAD~$num_commits"
         printf "\n"
         printf "Starting Git Rebase in interactive mode for the last %s commits...\n" "$num_commits"
-    elif [ "$rebase_choice" == "3" ]; then
+    elif [[ "$rebase_choice" == "3" ]]; then
         local commit_hash # Local variable for commit hash.
         read -r -p "Enter the full commit hash you want to reword: " commit_hash
 
-        if [ -z "$commit_hash" ]; then # Check if commit hash is empty.
+        if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
             printf "Commit hash cannot be empty.\n" >&2
             exit 1
         fi
@@ -343,7 +343,7 @@ main() {
     handle_paused_rebase
 
     # If changes were stashed at the beginning, remind the user to pop them.
-    if [ "$changes_stashed" = true ]; then
+    if [[ "$changes_stashed" = true ]]; then
         printf "\n"
         printf "Remember: You stashed changes before starting the script.\n"
         printf "Please restore them using 'git stash pop' after you are done.\n"
