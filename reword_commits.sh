@@ -8,20 +8,20 @@
 display_help() {
     # basename "$0" extracts the script's name from its path (e.g., "reword_commits.sh").
     # This makes the usage message dynamic and correct regardless of how the script is called.
-    echo "Usage: $(basename "$0") [OPTIONS]"
-    echo "Script for interactively rewriting Git commit messages."
-    echo ""
-    echo "Options:"
-    echo "  -h, --help                      Show this help message and exit."
-    echo "  -d, --default                   Use default Git editor selection (GIT_EDITOR, EDITOR, then nano)."
-    echo "  -e <EDITOR>, --editor=<EDITOR>  Specify the Git editor to use (e.g., nano, vim, code --wait)."
-    echo ""
-    echo "Examples:"
-    echo "  $(basename "$0")"
-    echo "  $(basename "$0") --help"
-    echo "  $(basename "$0") --editor=vim"
-    echo "  $(basename "$0") -e code --wait"
-    echo "  $(basename "$0") --default"
+    printf "Usage: %s [OPTIONS]\n" "$(basename "$0")"
+    printf "Script for interactively rewriting Git commit messages.\n"
+    printf "\n"
+    printf "Options:\n"
+    printf "  -h, --help                        Show this help message and exit.\n"
+    printf "  -d, --default                     Use default Git editor selection (GIT_EDITOR, EDITOR, then nano).\n"
+    printf "  -e <EDITOR>, --editor=<EDITOR>    Specify the Git editor to use (e.g., nano, vim, code --wait).\n"
+    printf "\n"
+    printf "Examples:\n"
+    printf "  %s\n" "$(basename "$0")"
+    printf "  %s --help\n" "$(basename "$0")"
+    printf "  %s --editor=vim\n" "$(basename "$0")"
+    printf "  %s -e code --wait\n" "$(basename "$0")"
+    printf "  %s --default\n" "$(basename "$0")"
     exit 0 # Exit the script after displaying help as requested.
 }
 
@@ -36,11 +36,11 @@ get_rebase_option() {
         read -r -p "Enter 1, 2 or 3: " choice # Prompt user for input. -r prevents backslash escapes.
         # Check if the choice is one of the valid options (1, 2, or 3).
         if [[ "$choice" == "1" || "$choice" == "2" || "$choice" == "3" ]]; then
-            echo "$choice" # Output the valid choice to stdout.
+            printf "%s\n" "$choice" # Output the valid choice to stdout.
             break # Exit the loop.
         else
             # Redirect error message to stderr (standard error) to keep stdout clean for script output.
-            echo "Invalid choice. Please enter 1, 2 or 3." >&2
+            printf "Invalid choice. Please enter 1, 2 or 3.\n" >&2
         fi
     done
 }
@@ -58,10 +58,10 @@ get_num_commits() {
         # =~ ^[0-9]+$ checks if the variable contains only digits.
         # -ne 0 checks if the number is not zero.
         if [[ "$num_commits" =~ ^[0-9]+$ ]] && [ "$num_commits" -ne 0 ]; then
-            echo "$num_commits" # Output the valid number.
+            printf "%s\n" "$num_commits" # Output the valid number.
             break # Exit the loop.
         else
-            echo "Invalid input. Please enter a positive integer." >&2 # Error to stderr.
+            printf "Invalid input. Please enter a positive integer.\n" >&2 # Error to stderr.
         fi
     done
 }
@@ -76,15 +76,15 @@ get_stash_choice() {
         read -r -p "Do you want to (s) stash changes and continue, or (e) exit? " stash_choice
         case "$stash_choice" in
             s|S) # Case-insensitive match for 's'.
-                echo "s" # Output choice.
+                printf "s\n" # Output choice.
                 break # Exit loop.
                 ;;
             e|E) # Case-insensitive match for 'e'.
-                echo "e" # Output choice.
+                printf "e\n" # Output choice.
                 break # Exit loop.
                 ;;
             *) # Default case for invalid input.
-                echo "Invalid choice. Please enter 's' or 'e'." >&2 # Error to stderr.
+                printf "Invalid choice. Please enter 's' or 'e'.\n" >&2 # Error to stderr.
                 ;;
         esac
     done
@@ -102,16 +102,16 @@ determine_git_editor() {
 
     # If --default is not used AND a custom editor is provided via arguments, use it.
     if [ "$USE_DEFAULT_EDITOR" = false ] && [ -n "$CUSTOM_EDITOR" ]; then
-        echo "$CUSTOM_EDITOR"
+        printf "%s\n" "$CUSTOM_EDITOR"
     # If GIT_EDITOR environment variable is set, use it. Git's preferred editor.
     elif [ -n "$GIT_EDITOR" ]; then
-        echo "$GIT_EDITOR"
+        printf "%s\n" "$GIT_EDITOR"
     # If EDITOR environment variable is set, use it. Generic editor for many programs.
     elif [ -n "$EDITOR" ]; then
-        echo "$EDITOR"
+        printf "%s\n" "$EDITOR"
     # Fallback to 'nano' if no custom editor, GIT_EDITOR, or EDITOR is defined.
     else
-        echo "nano"
+        printf "nano\n"
     fi
 }
 
@@ -128,11 +128,11 @@ handle_paused_rebase() {
         # Check for the existence of the rebase-merge directory within .git,
         # which indicates an ongoing/paused rebase operation.
         if [ -d "$GIT_ROOT/.git/rebase-merge" ]; then
-            echo ""
-            echo "Git Rebase paused (likely on an 'edit' command or due to conflicts)."
-            echo "Please check the status, resolve conflicts (if any), or review changes."
+            printf "\n"
+            printf "Git Rebase paused (likely on an 'edit' command or due to conflicts).\n"
+            printf "Please check the status, resolve conflicts (if any), or review changes.\n"
             git status # Show current Git status to help user identify issues.
-            echo ""
+            printf "\n"
             read -r -p "Choose action: (c) - continue rebase, (a) - abort rebase, (q) - exit script: " user_action
             case "$user_action" in
                 c|C) # User wants to continue rebase.
@@ -141,26 +141,26 @@ handle_paused_rebase() {
                     # as `set -eo pipefail` would exit on failure otherwise,
                     # but here we want to provide a specific error message.
                     if ! git rebase --continue; then
-                        echo "Error continuing rebase. Please resolve conflicts manually or abort rebase." >&2
+                        printf "Error continuing rebase. Please resolve conflicts manually or abort rebase.\n" >&2
                         # Do not exit here; allow the loop to re-prompt if continue fails.
                     fi
                     ;;
                 a|A) # User wants to abort rebase.
                     git rebase --abort # Abort the rebase operation.
-                    echo "Git Rebase aborted."
+                    printf "Git Rebase aborted.\n"
                     exit 0 # Exit the script after aborting.
                     ;;
                 q|Q) # User wants to quit the script, leaving rebase in paused state.
-                    echo "Exiting script. Git Rebase remains in a paused state."
+                    printf "Exiting script. Git Rebase remains in a paused state.\n"
                     exit 0 # Exit the script.
                     ;;
                 *) # Invalid input.
-                    echo "Invalid input. Please enter 'c', 'a', or 'q'."
+                    printf "Invalid input. Please enter 'c', 'a', or 'q'.\n"
                     ;;
             esac
         else
-            echo ""
-            echo "Git Rebase operation completed."
+            printf "\n"
+            printf "Git Rebase operation completed.\n"
             break # Exit loop if rebase-merge directory no longer exists (rebase finished).
         fi
     done
@@ -206,21 +206,21 @@ main() {
                     CUSTOM_EDITOR="$2" # Assign the next argument as the custom editor.
                     shift 2 # Consume both the option and its value.
                 else
-                    echo "Error: Missing argument for $1" >&2 # Error if value is missing.
-                    exit 1 # Exit with error.
+                    printf "Error: Missing argument for %s\n" "$1" >&2 # Error if value is missing.
+                    exit 2 # Exit with error.
                 fi
                 ;;
             *) # Catch-all for invalid arguments.
-                echo "Error: Invalid argument $1" >&2 # Report invalid argument.
-                exit 1 # Exit with error.
+                printf "Error: Invalid argument %s\n" "$1" >&2 # Report invalid argument.
+                exit 2 # Exit with error.
                 ;;
         esac
     done
 
-    echo "Script for interactive rewriting of commit messages."
-    echo "This script will use 'git rebase -i' to modify Git history."
-    echo "Be careful, changing history can have consequences."
-    echo ""
+    printf "Script for interactive rewriting of commit messages.\n"
+    printf "This script will use 'git rebase -i' to modify Git history.\n"
+    printf "Be careful, changing history can have consequences.\n"
+    printf "\n"
 
     local changes_stashed=false # Flag to track if changes were stashed.
 
@@ -231,7 +231,7 @@ main() {
     # Mark GIT_ROOT as readonly to ensure its immutability after initialization.
     readonly GIT_ROOT
     if [ -z "$GIT_ROOT" ]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
-        echo "Error: Could not find Git repository root directory." >&2
+        printf "Error: Could not find Git repository root directory.\n" >&2
         exit 1
     fi
 
@@ -239,33 +239,33 @@ main() {
     # git diff --quiet: Exits with 1 if there are changes, 0 if clean.
     # git diff --cached --quiet: Checks staged changes.
     if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo ""
-        echo "Warning: You have uncommitted changes or changes in the index." >&2
+        printf "\n"
+        printf "Warning: You have uncommitted changes or changes in the index.\n" >&2
         local stash_choice # Local variable for user's stash choice.
         stash_choice=$(get_stash_choice) # Get choice from helper function.
         case "$stash_choice" in
             s|S) # User chose to stash.
-                echo "Stashing uncommitted changes..."
+                printf "Stashing uncommitted changes...\n"
                 # git stash push --include-untracked: Stashes changes, including untracked files.
                 # -m: Adds a message to the stash entry for easier identification.
                 # $(git rev-parse --abbrev-ref HEAD): Gets the current branch name.
                 if ! git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"; then
-                    echo "Error: Failed to stash changes. Please resolve the issue manually." >&2
+                    printf "Error: Failed to stash changes. Please resolve the issue manually.\n" >&2
                     exit 1 # Exit if stashing fails.
                 fi
                 changes_stashed=true # Set flag to true to remind user to pop stash later.
                 ;;
             e|E) # User chose to exit.
-                echo "Exiting script. Please commit or discard your changes manually."
+                printf "Exiting script. Please commit or discard your changes manually.\n"
                 exit 0 # Exit the script.
                 ;;
         esac
     fi
 
-    echo "Do you want to rewrite history from the very first commit (root) or only the last N commits?"
-    echo "1. From the first commit (root)"
-    echo "2. Last N commits"
-    echo "3. A specific commit by hash"
+    printf "Do you want to rewrite history from the very first commit (root) or only the last N commits?\n"
+    printf "1. From the first commit (root)\n"
+    printf "2. Last N commits\n"
+    printf "3. A specific commit by hash\n"
 
     local rebase_choice # Local variable for rebase choice.
     rebase_choice=$(get_rebase_option) # Get rebase choice from helper function.
@@ -274,59 +274,59 @@ main() {
 
     if [ "$rebase_choice" == "1" ]; then
         rebase_command="--root" # --root rebases all commits from the beginning.
-        echo ""
-        echo "Starting Git Rebase in interactive mode for all commits from the beginning..."
+        printf "\n"
+        printf "Starting Git Rebase in interactive mode for all commits from the beginning...\n"
     elif [ "$rebase_choice" == "2" ]; then
         local num_commits # Local variable for number of commits.
         num_commits=$(get_num_commits) # Get number of commits from helper function.
         # HEAD~$num_commits specifies the last N commits relative to HEAD.
         rebase_command="HEAD~$num_commits"
-        echo ""
-        echo "Starting Git Rebase in interactive mode for the last ${num_commits} commits..."
+        printf "\n"
+        printf "Starting Git Rebase in interactive mode for the last %s commits...\n" "$num_commits"
     elif [ "$rebase_choice" == "3" ]; then
         local commit_hash # Local variable for commit hash.
         read -r -p "Enter the full commit hash you want to reword: " commit_hash
 
         if [ -z "$commit_hash" ]; then # Check if commit hash is empty.
-            echo "Commit hash cannot be empty." >&2
+            printf "Commit hash cannot be empty.\n" >&2
             exit 1
         fi
 
         # git cat-file -e: Checks if a Git object (commit, tree, blob) exists.
         # 2>/dev/null: Suppress error output from git cat-file if commit doesn't exist.
         if ! git cat-file -e "$commit_hash" 2>/dev/null; then
-            echo "Error: Commit with hash '$commit_hash' does not exist in the repository."
+            printf "Error: Commit with hash '%s' does not exist in the repository.\n" "$commit_hash"
             exit 1
         fi
 
         # For reword, we rebase on the parent of the commit to be reworded.
-        rebase_command="$commit_hash~1"
-        echo ""
-        echo "Starting Git Rebase in interactive mode to reword commit '$commit_hash'..."
+        rebase_command="%s~1" "$commit_hash"
+        printf "\n"
+        printf "Starting Git Rebase in interactive mode to reword commit '%s'...\n" "$commit_hash"
     fi
 
-    echo ""
-    echo "After opening the editor (default: Nano) with the rebase plan:"
-    echo "1. Change 'pick' to 'reword' (or 'r') for commits whose messages you want to change."
-    echo "   If you selected 'A specific commit by hash', you will see only that commit."
-    echo "   Change its command to 'reword' (or 'r')."
-    echo "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,"
-    echo "   or to inspect the state):"
-    echo "   Locate the commit in your rebase plan where you want to pause and change its"
-    echo "   command to 'edit' (or 'e')."
-    echo "   For example, if you want to rewrite 15 commits, and then pause"
-    echo "   before the 16th to review, change the 16th commit's command to 'edit'."
-    echo "   Git will stop at this 'edit' commit. This script will then give you options"
-    echo "   to continue or abort."
-    echo "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor (default: Nano)."
-    echo "4. Git will sequentially open the editor (default: Nano) for each"
-    echo "   'reword' commit. Rewrite the message, adhering to Conventional"
-    echo "   Commits (https://www.conventionalcommits.org/en/v1.0.0/)."
-    echo "   Example: feat(auth): add user login functionality"
-    echo "   You will see the commit number and its old message in the editor window."
-    echo "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit."
-    echo ""
-    read -r -p "Press Enter to continue and start interactive commit rewriting..."
+    printf "\n"
+    printf "After opening the editor (default: Nano) with the rebase plan:\n"
+    printf "1. Change 'pick' to 'reword' (or 'r') for commits whose messages you want to change.\n"
+    printf "   If you selected 'A specific commit by hash', you will see only that commit.\n"
+    printf "   Change its command to 'reword' (or 'r').\n"
+    printf "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,\n"
+    printf "   or to inspect the state):\n"
+    printf "   Locate the commit in your rebase plan where you want to pause and change its\n"
+    printf "   command to 'edit' (or 'e').\n"
+    printf "   For example, if you want to rewrite 15 commits, and then pause\n"
+    printf "   before the 16th to review, change the 16th commit's command to 'edit'.\n"
+    printf "   Git will stop at this 'edit' commit. This script will then give you options\n"
+    printf "   to continue or abort.\n"
+    printf "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor (default: Nano).\n"
+    printf "4. Git will sequentially open the editor (default: Nano) for each\n"
+    printf "   'reword' commit. Rewrite the message, adhering to Conventional\n"
+    printf "   Commits (https://www.conventionalcommits.org/en/v1.0.0/).\n"
+    printf "   Example: feat(auth): add user login functionality\n"
+    printf "   You will see the commit number and its old message in the editor window.\n"
+    printf "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit.\n"
+    printf "\n"
+    read -r -p "Press Enter to continue and start interactive commit rewriting...\n"
 
     # Declare REBASE_EDITOR as a local variable. Its value is determined by the `determine_git_editor` function.
     local REBASE_EDITOR
@@ -344,15 +344,15 @@ main() {
 
     # If changes were stashed at the beginning, remind the user to pop them.
     if [ "$changes_stashed" = true ]; then
-        echo ""
-        echo "Remember: You stashed changes before starting the script."
-        echo "Please restore them using 'git stash pop' after you are done."
+        printf "\n"
+        printf "Remember: You stashed changes before starting the script.\n"
+        printf "Please restore them using 'git stash pop' after you are done.\n"
     fi
 
-    echo "If you have successfully rewritten the commits, you may need to"
-    echo "force push changes to the remote repository. Please check your Git"
-    echo "history with 'git log --oneline' and, if necessary, execute"
-    echo "'git push --force-with-lease'."
+    printf "If you have successfully rewritten the commits, you may need to\n"
+    printf "force push changes to the remote repository. Please check your Git\n"
+    printf "history with 'git log --oneline' and, if necessary, execute\n"
+    printf "'git push --force-with-lease'.\n"
 }
 
 # Check if the script is being run directly (not sourced).
