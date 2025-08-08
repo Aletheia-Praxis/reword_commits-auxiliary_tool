@@ -353,7 +353,8 @@ main() {
     printf "If you have successfully rewritten the commits, you may need to\n"
     printf "force push changes to the remote repository. Please check your Git\n"
     printf "history with 'git log --oneline' and, if necessary, execute\n"
-    printf "'git push --force-with-lease'.\n"
+    printf "'git push --force-with-lease'. Remember, this is only needed if you\n"
+    printf "have already pushed these commits to a remote branch.\n"
 }
 
 # Check if the script is being run directly (not sourced).
