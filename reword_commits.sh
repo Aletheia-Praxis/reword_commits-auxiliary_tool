@@ -119,11 +119,12 @@ determine_git_editor() {
 # Description: Checks if a Git rebase operation is paused (e.g., at an 'edit' step or due to conflicts).
 #              If paused, it prompts the user to continue, abort, or exit the script,
 #              and executes the chosen Git rebase command.
-# Arguments: None
-# Global Variables Used: GIT_ROOT (expected to be set by main)
+# Arguments:
+#   $1: GIT_ROOT (path to the Git repository root)
 # Exit Code: 0 (if user chooses to abort rebase or exit script)
 handle_paused_rebase() {
     local user_action="" # Local variable to store user's choice.
+    local GIT_ROOT="$1" # Declare GIT_ROOT as a local variable from the first argument.
     while true; do # Loop until rebase is completed or script exits.
         # Check for the existence of the rebase-merge directory within .git,
         # which indicates an ongoing/paused rebase operation.
@@ -180,6 +181,7 @@ main() {
     set -eo pipefail
 
     # If no arguments are provided to the script, display help and exit.
+    # This ensures that running the script without any options will show usage information.
     if [[ "$#" -eq 0 ]]; then
         display_help
     fi
@@ -197,32 +199,33 @@ main() {
     readonly RESET=$'\e[0m'
 
     # Argument parsing loop. "$#" is the number of arguments, loops while it's greater than 0.
+    # This loop processes each command-line argument to configure script behavior.
     while (( "$#" )); do
         case "$1" in # $1 is the current argument.
-            -h|--help) # Help option.
+            -h|--help) # Help option: Displays usage information and exits.
                 display_help # Call function to display help and exit.
                 ;;
-            -d|--default) # Default editor option.
+            -d|--default) # Default editor option: Instructs the script to use Git's default editor selection logic.
                 USE_DEFAULT_EDITOR=true # Set flag to true.
                 shift # Move to the next argument.
                 ;;
-            --editor=*) # Long option for editor with assignment (e.g., --editor=vim).
+            --editor=*) # Long option for editor with assignment (e.g., --editor=vim): Specifies a custom Git editor directly.
                 CUSTOM_EDITOR="${1#*=}" # Extract value after "=".
                 shift # Move to the next argument.
                 ;;
-            -e|--editor) # Short or long option for editor requiring a separate argument.
+            -e|--editor) # Short or long option for editor requiring a separate argument: Specifies a custom Git editor that follows the option.
                 # Check if the next argument ($2) exists and doesn't start with a hyphen (another option).
                 if [[ -n "$2" ]] && [[ "${2:0:1}" != "-" ]]; then
                     CUSTOM_EDITOR="$2" # Assign the next argument as the custom editor.
                     shift 2 # Consume both the option and its value.
                 else
                     printf "%sError: Missing argument for %s%s\n" "${BOLD_RED}" "$1" "${RESET}" >&2 # Error if value is missing.
-                    exit 2 # Exit with error.
+                    exit 2 # Exit with error (exit code 2 for command-line syntax errors, as per best practices).
                 fi
                 ;;
-            *) # Catch-all for invalid arguments.
+            *) # Catch-all for invalid arguments: Reports an unknown argument and exits with an error.
                 printf "%sError: Invalid argument %s%s\n" "${BOLD_RED}" "$1" "${RESET}" >&2 # Report invalid argument.
-                exit 2 # Exit with error.
+                exit 2 # Exit with error (exit code 2 for command-line syntax errors).
                 ;;
         esac
     done
@@ -246,26 +249,28 @@ main() {
     fi
 
     # Check for uncommitted changes in the working directory or staged area.
+    # This is a critical check to prevent data loss during rebase operations.
     # git diff --quiet: Exits with 1 if there are changes, 0 if clean.
     # git diff --cached --quiet: Checks staged changes.
     if ! git diff --quiet || ! git diff --cached --quiet; then
         printf "\n"
-        printf "%sWarning: You have uncommitted changes or changes in the index.%s\n" "${BOLD_YELLOW}" "${RESET}" >&2
+        printf "%sWarning: You have uncommitted changes or changes in the index.\n" "${BOLD_YELLOW}"
+        printf "         Please commit or stash them before proceeding.%s\n" "${RESET}" >&2
         local stash_choice # Local variable for user's stash choice.
         stash_choice=$(get_stash_choice) # Get choice from helper function.
         case "$stash_choice" in
-            s|S) # User chose to stash.
+            s|S) # User chose to stash: Stashes current changes to allow rebase to proceed cleanly.
                 printf "Stashing uncommitted changes...\n"
                 # git stash push --include-untracked: Stashes changes, including untracked files.
                 # -m: Adds a message to the stash entry for easier identification.
                 # $(git rev-parse --abbrev-ref HEAD): Gets the current branch name.
                 if ! git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"; then
-                    printf "%sError: Failed to stash changes. Please resolve the issue manually.%s\n" "${BOLD_RED}" "${RESET}" >&2
+                    printf "%sError: Failed to stash changes. Please resolve the issue manually and try again.%s\n" "${BOLD_RED}" "${RESET}" >&2
                     exit 1 # Exit if stashing fails. This is a runtime error, not misuse.
                 fi
                 changes_stashed=true # Set flag to true to remind user to pop stash later.
                 ;;
-            e|E) # User chose to exit.
+            e|E) # User chose to exit: Script terminates without performing any rebase.
                 printf "Exiting script. Please commit or discard your changes manually.\n"
                 exit 0 # Exit the script.
                 ;;
@@ -273,9 +278,10 @@ main() {
     fi
 
     printf "Do you want to rewrite history from the very first commit (root) or only the last N commits?\n"
-    printf "1. From the first commit (root)\n"
-    printf "2. Last N commits\n"
-    printf "3. A specific commit by hash\n"
+    printf "1. From the first commit (root): Rewrites all commits from the initial commit.\n"
+    printf "2. Last N commits: Rewrites a specified number of recent commits.\n"
+    printf "3. A specific commit by hash: Rewrites a single commit by its hash, \n"
+    printf "   allowing for targeted message changes.\n"
 
     local rebase_choice # Local variable for rebase choice.
     rebase_choice=$(get_rebase_option) # Get rebase choice from helper function.
@@ -299,14 +305,14 @@ main() {
 
         if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
             printf "%sError: Commit hash cannot be empty.%s\n" "${BOLD_RED}" "${RESET}" >&2
-            exit 2
+            exit 2 # Exit with error (exit code 2 for invalid input).
         fi
 
         # git cat-file -e: Checks if a Git object (commit, tree, blob) exists.
         # 2>/dev/null: Suppress error output from git cat-file if commit doesn't exist.
         if ! git cat-file -e "$commit_hash" 2>/dev/null; then
             printf "%sError: Commit with hash '%s' does not exist in the repository.%s\n" "${BOLD_RED}" "${RESET}" "$commit_hash"
-            exit 2
+            exit 2 # Exit with error (exit code 2 for invalid input).
         fi
 
         # For reword, we rebase on the parent of the commit to be reworded.
@@ -353,6 +359,7 @@ main() {
     handle_paused_rebase "$GIT_ROOT"
 
     # If changes were stashed at the beginning, remind the user to pop them.
+    # This helps in restoring the working directory to its state before the script execution.
     if [[ "$changes_stashed" = true ]]; then
         printf "\n"
         printf "Remember: You stashed changes before starting the script.\n"
