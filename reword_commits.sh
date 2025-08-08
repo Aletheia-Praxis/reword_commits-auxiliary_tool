@@ -133,6 +133,7 @@ handle_paused_rebase() {
             printf "Please check the status, resolve conflicts (if any), or review changes.\n"
             git status # Show current Git status to help user identify issues.
             printf "\n"
+            printf "If there are conflicts, resolve them, then stage the changes with 'git add <files>'.\n"
             read -r -p "Choose action: (c) - continue rebase, (a) - abort rebase, (q) - exit script: " user_action
             case "$user_action" in
                 c|C) # User wants to continue rebase.
