@@ -40,7 +40,7 @@ get_rebase_option() {
             break # Exit the loop.
         else
             # Redirect error message to stderr (standard error) to keep stdout clean for script output.
-            printf "Invalid choice. Please enter 1, 2 or 3.\n" >&2
+            printf "%sInvalid choice. Please enter 1, 2 or 3.%s\n" "${BOLD_YELLOW}" "${RESET}" >&2
         fi
     done
 }
@@ -61,7 +61,7 @@ get_num_commits() {
             printf "%s\n" "$num_commits" # Output the valid number.
             break # Exit the loop.
         else
-            printf "Invalid input. Please enter a positive integer.\n" >&2 # Error to stderr.
+            printf "%sInvalid input. Please enter a positive integer.%s\n" "${BOLD_YELLOW}" "${RESET}" >&2 # Error to stderr.
         fi
     done
 }
@@ -84,7 +84,7 @@ get_stash_choice() {
                 break # Exit loop.
                 ;;
             *) # Default case for invalid input.
-                printf "Invalid choice. Please enter 's' or 'e'.\n" >&2 # Error to stderr.
+                printf "%sInvalid choice. Please enter 's' or 'e'.%s\n" "${BOLD_YELLOW}" "${RESET}" >&2 # Error to stderr.
                 ;;
         esac
     done
@@ -142,7 +142,7 @@ handle_paused_rebase() {
                     # as `set -eo pipefail` would exit on failure otherwise,
                     # but here we want to provide a specific error message.
                     if ! git rebase --continue; then
-                        printf "Error continuing rebase. Please resolve conflicts manually or abort rebase.\n" >&2
+                        printf "%sError continuing rebase. Please resolve conflicts manually or abort rebase.%s\n" "${BOLD_RED}" "${RESET}" >&2
                         # Do not exit here; allow the loop to re-prompt if continue fails.
                     fi
                     ;;
@@ -156,7 +156,7 @@ handle_paused_rebase() {
                     exit 0 # Exit the script.
                     ;;
                 *) # Invalid input.
-                    printf "Invalid input. Please enter 'c', 'a', or 'q'.\n"
+                    printf "%sInvalid input. Please enter 'c', 'a', or 'q'.%s\n" "${BOLD_YELLOW}" "${RESET}"
                     ;;
             esac
         else
@@ -187,6 +187,15 @@ main() {
     local CUSTOM_EDITOR="" # Variable to store custom editor specified by user.
     local USE_DEFAULT_EDITOR=false # Flag to indicate if --default option is used.
 
+    # Declare color variables as readonly local for use across functions, as they are constants.
+    local BOLD_RED
+    local BOLD_YELLOW
+    local RESET
+
+    readonly BOLD_RED=$'\e[1;31m'
+    readonly BOLD_YELLOW=$'\e[1;33m'
+    readonly RESET=$'\e[0m'
+
     # Argument parsing loop. "$#" is the number of arguments, loops while it's greater than 0.
     while (( "$#" )); do
         case "$1" in # $1 is the current argument.
@@ -207,12 +216,12 @@ main() {
                     CUSTOM_EDITOR="$2" # Assign the next argument as the custom editor.
                     shift 2 # Consume both the option and its value.
                 else
-                    printf "Error: Missing argument for %s\n" "$1" >&2 # Error if value is missing.
+                    printf "%sError: Missing argument for %s%s\n" "${BOLD_RED}" "$1" "${RESET}" >&2 # Error if value is missing.
                     exit 2 # Exit with error.
                 fi
                 ;;
             *) # Catch-all for invalid arguments.
-                printf "Error: Invalid argument %s\n" "$1" >&2 # Report invalid argument.
+                printf "%sError: Invalid argument %s%s\n" "${BOLD_RED}" "$1" "${RESET}" >&2 # Report invalid argument.
                 exit 2 # Exit with error.
                 ;;
         esac
@@ -232,8 +241,8 @@ main() {
     # Mark GIT_ROOT as readonly to ensure its immutability after initialization.
     readonly GIT_ROOT
     if [[ -z "$GIT_ROOT" ]]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
-        printf "Error: Could not find Git repository root directory.\n" >&2
-        exit 2
+        printf "%sError: Could not find Git repository root directory.%s\n" "${BOLD_RED}" "${RESET}" >&2
+        exit 2 # Changed to exit 2 for misuse/environment error.
     fi
 
     # Check for uncommitted changes in the working directory or staged area.
@@ -241,7 +250,7 @@ main() {
     # git diff --cached --quiet: Checks staged changes.
     if ! git diff --quiet || ! git diff --cached --quiet; then
         printf "\n"
-        printf "Warning: You have uncommitted changes or changes in the index.\n" >&2
+        printf "%sWarning: You have uncommitted changes or changes in the index.%s\n" "${BOLD_YELLOW}" "${RESET}" >&2
         local stash_choice # Local variable for user's stash choice.
         stash_choice=$(get_stash_choice) # Get choice from helper function.
         case "$stash_choice" in
@@ -251,8 +260,8 @@ main() {
                 # -m: Adds a message to the stash entry for easier identification.
                 # $(git rev-parse --abbrev-ref HEAD): Gets the current branch name.
                 if ! git stash push --include-untracked -m "Temporary stash on branch $(git rev-parse --abbrev-ref HEAD)"; then
-                    printf "Error: Failed to stash changes. Please resolve the issue manually.\n" >&2
-                    exit 1 # Exit if stashing fails.
+                    printf "%sError: Failed to stash changes. Please resolve the issue manually.%s\n" "${BOLD_RED}" "${RESET}" >&2
+                    exit 1 # Exit if stashing fails. This is a runtime error, not misuse.
                 fi
                 changes_stashed=true # Set flag to true to remind user to pop stash later.
                 ;;
@@ -281,7 +290,7 @@ main() {
         local num_commits # Local variable for number of commits.
         num_commits=$(get_num_commits) # Get number of commits from helper function.
         # HEAD~$num_commits specifies the last N commits relative to HEAD.
-        rebase_command="HEAD~$num_commits"
+        rebase_command="HEAD~""$num_commits"
         printf "\n"
         printf "Starting Git Rebase in interactive mode for the last %s commits...\n" "$num_commits"
     elif [[ "$rebase_choice" == "3" ]]; then
@@ -289,14 +298,14 @@ main() {
         read -r -p "Enter the full commit hash you want to reword: " commit_hash
 
         if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
-            printf "Commit hash cannot be empty.\n" >&2
+            printf "%sError: Commit hash cannot be empty.%s\n" "${BOLD_RED}" "${RESET}" >&2
             exit 2
         fi
 
         # git cat-file -e: Checks if a Git object (commit, tree, blob) exists.
         # 2>/dev/null: Suppress error output from git cat-file if commit doesn't exist.
         if ! git cat-file -e "$commit_hash" 2>/dev/null; then
-            printf "Error: Commit with hash '%s' does not exist in the repository.\n" "$commit_hash"
+            printf "%sError: Commit with hash '%s' does not exist in the repository.%s\n" "${BOLD_RED}" "${RESET}" "$commit_hash"
             exit 2
         fi
 
