@@ -232,7 +232,7 @@ main() {
     readonly GIT_ROOT
     if [[ -z "$GIT_ROOT" ]]; then # Check if GIT_ROOT is empty, indicating not in a Git repo.
         printf "Error: Could not find Git repository root directory.\n" >&2
-        exit 1
+        exit 2
     fi
 
     # Check for uncommitted changes in the working directory or staged area.
@@ -289,14 +289,14 @@ main() {
 
         if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
             printf "Commit hash cannot be empty.\n" >&2
-            exit 1
+            exit 2
         fi
 
         # git cat-file -e: Checks if a Git object (commit, tree, blob) exists.
         # 2>/dev/null: Suppress error output from git cat-file if commit doesn't exist.
         if ! git cat-file -e "$commit_hash" 2>/dev/null; then
             printf "Error: Commit with hash '%s' does not exist in the repository.\n" "$commit_hash"
-            exit 1
+            exit 2
         fi
 
         # For reword, we rebase on the parent of the commit to be reworded.
