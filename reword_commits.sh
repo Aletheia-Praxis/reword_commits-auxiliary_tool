@@ -194,9 +194,19 @@ main() {
     local BOLD_YELLOW
     local RESET
 
-    readonly BOLD_RED=$'\e[1;31m'
-    readonly BOLD_YELLOW=$'\e[1;33m'
-    readonly RESET=$'\e[0m'
+    # Check if tput is available and stdout is a TTY, and NO_COLOR is not set.
+    # This ensures colors are used only when supported and desired.
+    if command -v tput &>/dev/null && [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+        BOLD_RED=$(tput setaf 1) # ANSI color code for red.
+        BOLD_YELLOW=$(tput setaf 3) # ANSI color code for yellow.
+        RESET=$(tput sgr0) # Resets text attributes to normal.
+    else
+        # If tput is not available, stdout is not a TTY, or NO_COLOR is set,
+        # set color variables to empty strings to disable colors.
+        BOLD_RED=""
+        BOLD_YELLOW=""
+        RESET=""
+    fi
 
     # Argument parsing loop. "$#" is the number of arguments, loops while it's greater than 0.
     # This loop processes each command-line argument to configure script behavior.
