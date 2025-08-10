@@ -311,12 +311,31 @@ main() {
         printf "Starting Git Rebase in interactive mode for the last %s commits...\n" "$num_commits"
     elif [[ "$rebase_choice" == "3" ]]; then
         local commit_hash # Local variable for commit hash.
-        read -r -p "Enter the full commit hash you want to reword: " commit_hash
-
+        read -r -p "Enter the full or abbreviated commit hash you want to reword (e.g., 110a32b for abbreviated or full hash): " commit_hash
+        
         if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
             printf "%sError: Commit hash cannot be empty.%s\n" "${BOLD_RED}" "${RESET}" >&2
             exit 2 # Exit with error (exit code 2 for invalid input).
         fi
+
+        # Validate commit hash format: 7 or 40 hexadecimal characters.
+        # This regex ensures the input is a valid SHA-1 hash, improving robustness.
+        if ! [[ "$commit_hash" =~ ^([0-9a-fA-F]{7}|[0-9a-fA-F]{40})$ ]]; then
+            printf "%sError: Invalid commit hash format. Must be a 7-character abbreviated or 40-character full hexadecimal string.%s\n" "${BOLD_RED}" "${RESET}" >&2
+            exit 2 # Exit with error for invalid format.
+        fi
+
+        # Attempt to resolve abbreviated hash to full hash to ensure uniqueness.
+        # This is crucial for handling abbreviated hashes correctly and preventing ambiguity.
+        local full_commit_hash
+        full_commit_hash=$(git rev-parse --verify "$commit_hash" 2>/dev/null)
+
+        if [[ -z "$full_commit_hash" ]]; then
+            printf "%sError: Commit with hash '%s' does not exist in the repository or is ambiguous.%s\n" "${BOLD_RED}" "${RESET}" "$commit_hash"
+            exit 2 # Exit with error (exit code 2 for invalid input).
+        fi
+
+        commit_hash="$full_commit_hash" # Use the full commit hash for rebase.
 
         # git cat-file -e: Checks if a Git object (commit, tree, blob) exists.
         # 2>/dev/null: Suppress error output from git cat-file if commit doesn't exist.
