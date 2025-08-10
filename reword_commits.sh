@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Exit Codes:
+# 0: Script executed successfully or exited gracefully (e.g., after displaying help, aborting rebase, or user choosing to exit).
+# 1: General execution error occurred (e.g., failure during Git stash operation).
+# 2: Invalid command-line argument, invalid user input, or environment error (e.g., not in a Git repository, missing argument for --editor).
+
 # Function: display_help
 # Description: Displays the help message for the script, detailing its usage,
 #              available options, and examples.
