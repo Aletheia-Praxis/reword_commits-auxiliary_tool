@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 # Exit Codes:
-# 0: Script executed successfully or exited gracefully (e.g., after displaying help, aborting rebase, or user choosing to exit).
+# 0: Script executed successfully or exited gracefully (e.g., after displaying help,
+#    aborting rebase, or user choosing to exit).
 # 1: General execution error occurred (e.g., failure during Git stash operation).
-# 2: Invalid command-line argument, invalid user input, or environment error (e.g., not in a Git repository, missing argument for --editor).
+# 2: Invalid command-line argument, invalid user input, or environment error (e.g., not in a Git
+#    repository, missing argument for --editor).
 
 # Function: display_help
 # Description: Displays the help message for the script, detailing its usage,
@@ -13,13 +15,14 @@
 display_help() {
     # basename "$0" extracts the script's name from its path (e.g., "reword_commits.sh").
     # This makes the usage message dynamic and correct regardless of how the script is called.
+    printf "\n"
     printf "Usage: %s [OPTIONS]\n" "$(basename "$0")"
     printf "Script for interactively rewriting Git commit messages.\n"
     printf "\n"
     printf "Options:\n"
-    printf "  -h, --help                        Show this help message and exit.\n"
-    printf "  -d, --default                     Use default Git editor selection (GIT_EDITOR, EDITOR, then nano).\n"
-    printf "  -e <EDITOR>, --editor=<EDITOR>    Specify the Git editor to use (e.g., nano, vim, code --wait).\n"
+    printf "  -h, --help                      Show this help message and exit.\n"
+    printf "  -d, --default                   Use default Git editor selection (GIT_EDITOR, EDITOR, then nano).\n"
+    printf "  -e <EDITOR>, --editor=<EDITOR>  Specify the Git editor to use (e.g., nano, vim, code --wait).\n"
     printf "\n"
     printf "Examples:\n"
     printf "  %s\n" "$(basename "$0")"
@@ -27,6 +30,7 @@ display_help() {
     printf "  %s --editor=vim\n" "$(basename "$0")"
     printf "  %s -e code --wait\n" "$(basename "$0")"
     printf "  %s --default\n" "$(basename "$0")"
+    printf "\n"
     exit 0 # Exit the script after displaying help as requested.
 }
 
@@ -245,6 +249,7 @@ main() {
         esac
     done
 
+    printf "\n"
     printf "Script for interactive rewriting of commit messages.\n"
     printf "This script will use 'git rebase -i' to modify Git history.\n"
     printf "Be careful, changing history can have consequences.\n"
@@ -316,7 +321,8 @@ main() {
         printf "Starting Git Rebase in interactive mode for the last %s commits...\n" "$num_commits"
     elif [[ "$rebase_choice" == "3" ]]; then
         local commit_hash # Local variable for commit hash.
-        read -r -p "Enter the full or abbreviated commit hash you want to reword (e.g., 110a32b for abbreviated or full hash): " commit_hash
+        read -r -p "Enter the full or abbreviated commit hash you want to reword" \
+                   " (e.g., 110a32b for abbreviated or full hash): " commit_hash
         
         if [[ -z "$commit_hash" ]]; then # Check if commit hash is empty.
             printf "%sError: Commit hash cannot be empty.%s\n" "${BOLD_RED}" "${RESET}" >&2
@@ -326,7 +332,8 @@ main() {
         # Validate commit hash format: 7 or 40 hexadecimal characters.
         # This regex ensures the input is a valid SHA-1 hash, improving robustness.
         if ! [[ "$commit_hash" =~ ^([0-9a-fA-F]{7}|[0-9a-fA-F]{40})$ ]]; then
-            printf "%sError: Invalid commit hash format. Must be a 7-character abbreviated or 40-character full hexadecimal string.%s\n" "${BOLD_RED}" "${RESET}" >&2
+            printf "%sError: Invalid commit hash format. Must be a 7-character abbreviated or\n" \
+                   "40-character full hexadecimal string.%s\n" "${BOLD_RED}" "${RESET}" >&2
             exit 2 # Exit with error for invalid format.
         fi
 
@@ -336,7 +343,8 @@ main() {
         full_commit_hash=$(git rev-parse --verify "$commit_hash" 2>/dev/null)
 
         if [[ -z "$full_commit_hash" ]]; then
-            printf "%sError: Commit with hash '%s' does not exist in the repository or is ambiguous.%s\n" "${BOLD_RED}" "${RESET}" "$commit_hash"
+            printf "%sError: Commit with hash '%s' does not exist in the repository or is\n" \
+                   "ambiguous.%s\n" "${BOLD_RED}" "${RESET}" "$commit_hash"
             exit 2 # Exit with error (exit code 2 for invalid input).
         fi
 
@@ -360,18 +368,19 @@ main() {
     printf "1. Change 'pick' to 'reword' (or 'r') for commits whose messages you want to change.\n"
     printf "   If you selected 'A specific commit by hash', you will see only that commit.\n"
     printf "   Change its command to 'reword' (or 'r').\n"
-    printf "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,\n"
-    printf "   or to inspect the state):\n"
-    printf "   Locate the commit in your rebase plan where you want to pause and change its\n"
-    printf "   command to 'edit' (or 'e').\n"
-    printf "   For example, if you want to rewrite 15 commits, and then pause\n"
-    printf "   before the 16th to review, change the 16th commit's command to 'edit'.\n"
-    printf "   Git will stop at this 'edit' commit. This script will then give you options\n"
-    printf "   to continue or abort.\n"
-    printf "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor (default: Nano).\n"
-    printf "4. Git will sequentially open the editor (default: Nano) for each\n"
-    printf "   'reword' commit. Rewrite the message, adhering to Conventional\n"
-    printf "   Commits (https://www.conventionalcommits.org/en/v1.0.0/).\n"
+    printf "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,\n" \
+           "   or to inspect the state):\n"
+    printf "   Locate the commit in your rebase plan where you want to pause and change its\n" \
+           "   command to 'edit' (or 'e').\n"
+    printf "   For example, if you want to rewrite 15 commits, and then pause\n" \
+           "   before the 16th to review, change the 16th commit's command to 'edit'.\n"
+    printf "   Git will stop at this 'edit' commit. This script will then give you options\n" \
+           "   to continue or abort.\n"
+    printf "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor\n" \
+           "   (default: Nano).\n"
+    printf "4. Git will sequentially open the editor (default: Nano) for each\n" \
+           "   'reword' commit. Rewrite the message, adhering to Conventional\n" \
+           "   Commits (https://www.conventionalcommits.org/en/v1.0.0/).\n"
     printf "   Example: feat(auth): add user login functionality\n"
     printf "   You will see the commit number and its old message in the editor window.\n"
     printf "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit.\n"
@@ -400,11 +409,11 @@ main() {
         printf "Please restore them using 'git stash pop' after you are done.\n"
     fi
 
-    printf "If you have successfully rewritten the commits, you may need to\n"
-    printf "force push changes to the remote repository. Please check your Git\n"
-    printf "history with 'git log --oneline' and, if necessary, execute\n"
-    printf "'git push --force-with-lease'. Remember, this is only needed if you\n"
-    printf "have already pushed these commits to a remote branch.\n"
+    printf "If you have successfully rewritten the commits, you may need to\n" \
+           "force push changes to the remote repository. Please check your Git\n" \
+           "history with 'git log --oneline' and, if necessary, execute\n" \
+           "'git push --force-with-lease'. Remember, this is only needed if you\n" \
+           "have already pushed these commits to a remote branch.\n"
 }
 
 # Check if the script is being run directly (not sourced).
