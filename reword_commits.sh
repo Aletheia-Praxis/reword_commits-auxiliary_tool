@@ -368,19 +368,18 @@ main() {
     printf "1. Change 'pick' to 'reword' (or 'r') for commits whose messages you want to change.\n"
     printf "   If you selected 'A specific commit by hash', you will see only that commit.\n"
     printf "   Change its command to 'reword' (or 'r').\n"
-    printf "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,\n" \
-           "   or to inspect the state):\n"
-    printf "   Locate the commit in your rebase plan where you want to pause and change its\n" \
-           "   command to 'edit' (or 'e').\n"
-    printf "   For example, if you want to rewrite 15 commits, and then pause\n" \
-           "   before the 16th to review, change the 16th commit's command to 'edit'.\n"
-    printf "   Git will stop at this 'edit' commit. This script will then give you options\n" \
-           "   to continue or abort.\n"
-    printf "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor\n" \
-           "   (default: Nano).\n"
-    printf "4. Git will sequentially open the editor (default: Nano) for each\n" \
-           "   'reword' commit. Rewrite the message, adhering to Conventional\n" \
-           "   Commits (https://www.conventionalcommits.org/en/v1.0.0/).\n"
+    printf "2. To pause the rebase operation at a specific commit (e.g., after a batch of changes,\n"
+    printf "   or to inspect the state):\n"
+    printf "   Locate the commit in your rebase plan where you want to pause and change its\n"
+    printf "   command to 'edit' (or 'e').\n"
+    printf "   For example, if you want to rewrite 15 commits, and then pause\n"
+    printf "   before the 16th to review, change the 16th commit's command to 'edit'.\n"
+    printf "   Git will stop at this 'edit' commit. This script will then give you options\n"
+    printf "   to continue or abort.\n"
+    printf "3. Save (Ctrl+O) and close (Ctrl+X) the rebase plan file in the editor (default: Nano).\n"
+    printf "4. Git will sequentially open the editor (default: Nano) for each\n"
+    printf "   'reword' commit. Rewrite the message, adhering to Conventional\n"
+    printf "   Commits (https://www.conventionalcommits.org/en/v1.0.0/).\n"
     printf "   Example: feat(auth): add user login functionality\n"
     printf "   You will see the commit number and its old message in the editor window.\n"
     printf "5. Save (Ctrl+O) and close (Ctrl+X) each message file to proceed to the next commit.\n"
@@ -409,11 +408,11 @@ main() {
         printf "Please restore them using 'git stash pop' after you are done.\n"
     fi
 
-    printf "If you have successfully rewritten the commits, you may need to\n" \
-           "force push changes to the remote repository. Please check your Git\n" \
-           "history with 'git log --oneline' and, if necessary, execute\n" \
-           "'git push --force-with-lease'. Remember, this is only needed if you\n" \
-           "have already pushed these commits to a remote branch.\n"
+    printf "If you have successfully rewritten the commits, you may need to\n"
+    printf "force push changes to the remote repository. Please check your Git\n"
+    printf "history with 'git log --oneline' and, if necessary, execute\n"
+    printf "'git push --force-with-lease'. Remember, this is only needed if you\n"
+    printf "have already pushed these commits to a remote branch.\n"
 }
 
 # Check if the script is being run directly (not sourced).
