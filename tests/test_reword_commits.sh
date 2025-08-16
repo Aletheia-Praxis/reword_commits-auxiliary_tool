@@ -42,7 +42,14 @@ SHUNIT2_PATH="$(dirname "$0")/shunit2/shunit2"
 # Import functions for testing
 source "$(dirname "$0")/../reword_commits.sh"
 
-# Mock the read function for get_rebase_option
+test_display_help() {
+  display_help
+  local expected_output
+  expected_output="\nUsage: reword_commits.sh [OPTIONS]\nScript for interactively rewriting Git commit messages.\n\nOptions:\n  -h, --help                      Show this help message and exit.\n  -d, --default                   Use default Git editor selection (GIT_EDITOR, EDITOR, then nano).\n  -e <EDITOR>, --editor=<EDITOR>  Specify the Git editor to use (e.g., nano, vim, code --wait).\n\nExamples:\n  reword_commits.sh\n  reword_commits.sh --help\n  reword_commits.sh --editor=vim\n  reword_commits.sh -e code --wait\n  reword_commits.sh --default\n\n"
+  assertEquals "0" "$_last_exit_code"
+  assertEquals "$expected_output" "$_captured_printf_output"
+}
+
 mock_read() {
   REPLY="$1"
 }
