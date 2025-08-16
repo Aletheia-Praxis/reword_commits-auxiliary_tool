@@ -4,6 +4,36 @@
 
 set -x
 
+# Mock the exit function to prevent script from exiting during tests
+exit() {
+  _last_exit_code=$1
+}
+
+# Mock the printf function to capture its output
+printf() {
+  _captured_printf_output+="$(printf "$@")"
+}
+
+# Helper function to reset captured output
+reset_mocks() {
+  _last_exit_code=0
+  _captured_printf_output=""
+}
+
+setUp() {
+  reset_mocks
+  # Create a temporary directory for Git tests
+  _test_git_root="$(mktemp -d)"
+  export GIT_TOPLEVEL_DIR="$_test_git_root"
+  mkdir -p "$_test_git_root/.git"
+  # Mimic a minimal Git repository state if needed for common mocks
+}
+
+tearDown() {
+  # Clean up the temporary directory
+  rm -rf "$_test_git_root"
+}
+
 # tests/test_reword_commits.sh
 
 # Add path to shunit2
