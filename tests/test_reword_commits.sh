@@ -202,9 +202,292 @@ test_get_stash_choice_multiple_invalid_then_exit() {
   }
 }
 
-# Structure for handle_paused_rebase (mocking git)
-# Full-fledged testing of handle_paused_rebase requires complex mocking of git and the file system,
-# so here is only a template for future integration tests.
+# Mocks for git commands to isolate main function tests
+git() {
+  case "$1" in
+    "rev-parse")
+      if [[ "$2" == "--show-toplevel" ]]; then
+        echo "${GIT_TOPLEVEL_DIR:-/mock/git/root}"
+      elif [[ "$2" == "--abbrev-ref" ]] && [[ "$3" == "HEAD" ]]; then
+        echo "mock-branch"
+      elif [[ "$2" == "--verify" ]]; then
+        echo "mockfullhash123456789012345678901234567890"
+      else
+        echo ""
+      fi
+      ;;
+    "diff")
+      # Simulate no changes by default
+      return 0
+      ;;
+    "stash")
+      # Simulate successful stash
+      return 0
+      ;;
+    "cat-file")
+      # Simulate commit existence
+      return 0
+      ;;
+    "rebase")
+      if [[ "$_rebase_continue_fail" == "true" ]]; then
+        _rebase_continue_fail=false # Reset for next call
+        return 1
+      fi
+      return 0
+      ;;
+    "status")
+      echo "On branch mock-branch\nnothing to commit, working tree clean"
+      return 0
+      ;;
+    *)
+      echo "mock git command: $@" >&2
+      return 1
+      ;;
+  esac
+}
+
+test_main_no_args() {
+  reset_mocks # Ensure mocks are clean for this test
+  main # Call main with no arguments
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Usage: reword_commits.sh\" ]]" # Check for help message
+}
+
+# Test for main with --help argument (should display help)
+test_main_help_arg() {
+  reset_mocks
+  main "--help"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Usage: reword_commits.sh\" ]]"
+}
+
+# Test for main with -h argument (should display help)
+test_main_h_arg() {
+  reset_mocks
+  main "-h"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Usage: reword_commits.sh\" ]]"
+}
+
+test_main_invalid_arg() {
+  reset_mocks
+  main "--invalid"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Invalid argument --invalid\" ]]"
+}
+
+test_main_editor_missing_arg() {
+  reset_mocks
+  main "-e"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Missing argument for -e\" ]]"
+}
+
+test_main_editor_with_arg() {
+  reset_mocks
+  (echo "1"; echo "n") | main "-e" "vim"
+  assertEquals "0" "$_last_exit_code"
+}
+
+test_main_editor_equals_arg() {
+  reset_mocks
+  (echo "1"; echo "n") | main "--editor=code --wait"
+  assertEquals "0" "$_last_exit_code"
+}
+
+test_main_default_editor() {
+  reset_mocks
+  (echo "1"; echo "n") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+}
+
+test_main_not_in_git_repo() {
+  reset_mocks
+  # Temporarily override git rev-parse to simulate not being in a repo
+  git() {
+    if [[ "$1" == "rev-parse" ]]; then
+      echo ""
+      return 1
+    else
+      command git "$@"
+    fi
+  }
+  main "--help"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Could not find Git repository root directory.\" ]]"
+}
+
+test_main_uncommitted_changes_stash() {
+  reset_mocks
+  # Mock git diff to simulate uncommitted changes
+  git() {
+    if [[ "$1" == "diff" ]]; then
+      return 1 # Simulate changes exist
+    elif [[ "$1" == "stash" ]]; then
+      return 0 # Simulate successful stash
+    else
+      command git "$@"
+    fi
+  }
+  (echo "s"; echo "1"; echo "n") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Stashing uncommitted changes...\" ]]"
+}
+
+test_main_uncommitted_changes_exit() {
+  reset_mocks
+  # Mock git diff to simulate uncommitted changes
+  git() {
+    if [[ "$1" == "diff" ]]; then
+      return 1 # Simulate changes exist
+    else
+      command git "$@"
+    fi
+  }
+  (echo "e") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Exiting script. Please commit or discard your changes manually.\" ]]"
+}
+
+test_main_stash_fail() {
+  reset_mocks
+  # Mock git diff to simulate uncommitted changes, and git stash to fail
+  git() {
+    if [[ "$1" == "diff" ]]; then
+      return 1 # Simulate changes exist
+    elif [[ "$1" == "stash" ]]; then
+      return 1 # Simulate stash failure
+    else
+      command git "$@"
+    fi
+  }
+  (echo "s") | main "--default"
+  assertEquals "1" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Failed to stash changes. Please resolve the issue manually and try again.\" ]]"
+}
+
+test_main_rebase_from_root() {
+  reset_mocks
+  (echo "1"; echo "n") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Starting Git Rebase in interactive mode for all commits from the beginning...\" ]]"
+}
+
+test_main_rebase_last_n_commits() {
+  reset_mocks
+  (echo "2"; echo "5"; echo "n") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Starting Git Rebase in interactive mode for the last 5 commits...\" ]]"
+}
+
+test_main_rebase_specific_commit() {
+  reset_mocks
+  (echo "3"; echo "abcdef7"; echo "n") | main "--default"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Starting Git Rebase in interactive mode to reword commit mockfullhash123456789012345678901234567890...\" ]]"
+}
+
+test_main_rebase_specific_commit_empty_hash() {
+  reset_mocks
+  (echo "3"; echo ""; echo "n") | main "--default"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Commit hash cannot be empty.\" ]]"
+}
+
+test_main_rebase_specific_commit_invalid_format() {
+  reset_mocks
+  (echo "3"; echo "invalidhash"; echo "n") | main "--default"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Invalid commit hash format.\" ]]"
+}
+
+test_main_rebase_specific_commit_nonexistent() {
+  reset_mocks
+  # Mock git rev-parse to simulate non-existent commit
+  git() {
+    if [[ "$1" == "rev-parse" && "$2" == "--verify" ]]; then
+      echo ""
+      return 1
+    else
+      command git "$@"
+    fi
+  }
+  (echo "3"; echo "abcdef7"; echo "n") | main "--default"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Commit with hash 'abcdef7' does not exist in the repository or is ambiguous.\" ]]"
+}
+
+test_main_rebase_specific_commit_cat_file_fail() {
+  reset_mocks
+  # Mock git cat-file to simulate non-existent commit
+  git() {
+    if [[ "$1" == "cat-file" ]]; then
+      return 1
+    else
+      command git "$@"
+    fi
+  }
+  (echo "3"; echo "abcdef7"; echo "n") | main "--default"
+  assertEquals "2" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error: Commit with hash 'abcdef7' does not exist in the repository.\" ]]"
+}
+
+# Tests for handle_paused_rebase
+test_handle_paused_rebase_continue_success() {
+  reset_mocks
+  # Simulate rebase-merge directory exists
+  mkdir "$_test_git_root/.git/rebase-merge"
+  
+  (echo "c") | handle_paused_rebase "$_test_git_root"
+  assertEquals "0" "$_last_exit_code"
+  assertFalse "[[ -d \"$_test_git_root/.git/rebase-merge\" ]]" # Should be gone after successful continue
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Git Rebase operation completed.\" ]]"
+}
+
+test_handle_paused_rebase_continue_fail() {
+  reset_mocks
+  # Simulate rebase-merge directory exists and git rebase --continue fails
+  mkdir "$_test_git_root/.git/rebase-merge"
+  _rebase_continue_fail=true # Flag to make git rebase return 1
+  
+  (echo "c"; echo "q") | handle_paused_rebase "$_test_git_root"
+  assertEquals "0" "$_last_exit_code" # Exits with 0 if user quits after failure
+  assertTrue "[[ -d \"$_test_git_root/.git/rebase-merge\" ]]" # Should still exist
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Error continuing rebase. Please resolve conflicts manually or abort rebase.\" ]]"
+}
+
+test_handle_paused_rebase_abort() {
+  reset_mocks
+  # Simulate rebase-merge directory exists
+  mkdir "$_test_git_root/.git/rebase-merge"
+  
+  (echo "a") | handle_paused_rebase "$_test_git_root"
+  assertEquals "0" "$_last_exit_code"
+  assertFalse "[[ -d \"$_test_git_root/.git/rebase-merge\" ]]" # Should be gone after abort
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Git Rebase aborted.\" ]]"
+}
+
+test_handle_paused_rebase_quit() {
+  reset_mocks
+  # Simulate rebase-merge directory exists
+  mkdir "$_test_git_root/.git/rebase-merge"
+  
+  (echo "q") | handle_paused_rebase "$_test_git_root"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ -d \"$_test_git_root/.git/rebase-merge\" ]]" # Should still exist
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Exiting script. Git Rebase remains in a paused state.\" ]]"
+}
+
+test_handle_paused_rebase_invalid_then_valid() {
+  reset_mocks
+  # Simulate rebase-merge directory exists
+  mkdir "$_test_git_root/.git/rebase-merge"
+  
+  (echo "x"; echo "c") | handle_paused_rebase "$_test_git_root"
+  assertEquals "0" "$_last_exit_code"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Invalid input. Please enter 'c', 'a', or 'q'.\" ]]"
+  assertTrue "[[ \"$_captured_printf_output\" =~ \"Git Rebase operation completed.\" ]]"
+}
 
 # Run shunit2
 . "$SHUNIT2_PATH" 
