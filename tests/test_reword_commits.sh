@@ -51,7 +51,17 @@ test_display_help() {
 }
 
 mock_read() {
-  REPLY="$1"
+  if [[ -n "${_mock_input_array[*]}" ]]; then
+    REPLY="${_mock_input_array[0]}"
+    _mock_input_array=("${_mock_input_array[@]:1}")
+  else
+    # Fallback to original read if no mock input is set or array is empty
+    command read -r -p "$*" REPLY
+  fi
+}
+
+set_mock_input() {
+  _mock_input_array=("$@")
 }
 
 # Test for get_rebase_option (valid input)
