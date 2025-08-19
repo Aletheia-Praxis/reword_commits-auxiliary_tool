@@ -11,7 +11,7 @@ exit() {
 
 # Mock the printf function to capture its output
 printf() {
-  _captured_printf_output+="$(printf '%b' "$@")"
+  _captured_printf_output+=$(command printf '%b' "$@")
 }
 
 # Helper function to reset captured output
