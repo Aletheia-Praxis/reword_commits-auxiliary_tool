@@ -11,7 +11,7 @@ exit() {
 
 # Mock the printf function to capture its output
 printf() {
-  _captured_printf_output+="$(printf "$@")"
+  _captured_printf_output+="$(printf '%b' "$@")"
 }
 
 # Helper function to reset captured output
@@ -203,6 +203,7 @@ test_get_stash_choice_multiple_invalid_then_exit() {
 }
 
 # Mocks for git commands to isolate main function tests
+# shellcheck disable=SC2317
 git() {
   case "$1" in
     "rev-parse")
@@ -236,11 +237,11 @@ git() {
       return 0
       ;;
     "status")
-      echo "On branch mock-branch\nnothing to commit, working tree clean"
+      printf '%b' "On branch mock-branch\nnothing to commit, working tree clean"
       return 0
       ;;
     *)
-      echo "mock git command: $@" >&2
+      printf '%s' "mock git command: $*" >&2
       return 1
       ;;
   esac
@@ -304,6 +305,7 @@ test_main_default_editor() {
 test_main_not_in_git_repo() {
   reset_mocks
   # Temporarily override git rev-parse to simulate not being in a repo
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "rev-parse" ]]; then
       echo ""
@@ -320,6 +322,7 @@ test_main_not_in_git_repo() {
 test_main_uncommitted_changes_stash() {
   reset_mocks
   # Mock git diff to simulate uncommitted changes
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "diff" ]]; then
       return 1 # Simulate changes exist
@@ -337,6 +340,7 @@ test_main_uncommitted_changes_stash() {
 test_main_uncommitted_changes_exit() {
   reset_mocks
   # Mock git diff to simulate uncommitted changes
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "diff" ]]; then
       return 1 # Simulate changes exist
@@ -352,6 +356,7 @@ test_main_uncommitted_changes_exit() {
 test_main_stash_fail() {
   reset_mocks
   # Mock git diff to simulate uncommitted changes, and git stash to fail
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "diff" ]]; then
       return 1 # Simulate changes exist
@@ -404,6 +409,7 @@ test_main_rebase_specific_commit_invalid_format() {
 test_main_rebase_specific_commit_nonexistent() {
   reset_mocks
   # Mock git rev-parse to simulate non-existent commit
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "rev-parse" && "$2" == "--verify" ]]; then
       echo ""
@@ -420,6 +426,7 @@ test_main_rebase_specific_commit_nonexistent() {
 test_main_rebase_specific_commit_cat_file_fail() {
   reset_mocks
   # Mock git cat-file to simulate non-existent commit
+  # shellcheck disable=SC2317
   git() {
     if [[ "$1" == "cat-file" ]]; then
       return 1
