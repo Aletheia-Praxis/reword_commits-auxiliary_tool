@@ -45,6 +45,8 @@ setUp() {
   mkdir -p "$_test_git_root/.git"
   # Mimic a minimal Git repository state if needed for common mocks
   alias read=mock_read
+  # Import functions for testing
+  source "$(dirname "$0")/../reword_commits.sh"
 }
 
 tearDown() {
@@ -57,9 +59,6 @@ tearDown() {
 
 # Add path to shunit2
 SHUNIT2_PATH="$(dirname "$0")/shunit2/shunit2"
-
-# Import functions for testing
-source "$(dirname "$0")/../reword_commits.sh"
 
 test_display_help() {
   display_help
