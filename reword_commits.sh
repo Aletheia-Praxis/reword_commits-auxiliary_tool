@@ -7,13 +7,15 @@
 # 2: Invalid command-line argument, invalid user input, or environment error (e.g., not in a Git
 #    repository, missing argument for --editor).
 
+readonly PROGNAME=$(basename "${BASH_SOURCE[0]}")
+
 # Function: display_help
 # Description: Displays the script's help message, including usage, available options, and examples.
 # Arguments: None
 # Exit Code: 0 (Always exits after displaying help).
 display_help() {
     printf "\n"
-    printf "Usage: %s [OPTIONS]\n" "$(basename "$0")" # Dynamically uses script name for usage.
+    printf "Usage: %s [OPTIONS]\n" "$PROGNAME" # Dynamically uses script name for usage.
     printf "Script for interactively rewriting Git commit messages.\n"
     printf "\n"
     printf "Options:\n"
@@ -22,11 +24,11 @@ display_help() {
     printf "  -e <EDITOR>, --editor=<EDITOR>  Specify the Git editor to use (e.g., nano, vim, code --wait).\n"
     printf "\n"
     printf "Examples:\n"
-    printf "  %s\n" "$(basename "$0")"
-    printf "  %s --help\n" "$(basename "$0")"
-    printf "  %s --editor=vim\n" "$(basename "$0")"
-    printf "  %s -e code --wait\n" "$(basename "$0")"
-    printf "  %s --default\n" "$(basename "$0")"
+    printf "  %s\n" "$PROGNAME"
+    printf "  %s --help\n" "$PROGNAME"
+    printf "  %s --editor=vim\n" "$PROGNAME"
+    printf "  %s -e code --wait\n" "$PROGNAME"
+    printf "  %s --default\n" "$PROGNAME"
     printf "\n"
     exit 0
 }

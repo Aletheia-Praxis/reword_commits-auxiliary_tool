@@ -2,8 +2,6 @@
 
 # shellcheck disable=SC1090,SC1091
 
-set -x
-
 # Mock the exit function to prevent script from exiting during tests
 exit() {
   _last_exit_code=$1
@@ -11,7 +9,9 @@ exit() {
 
 # Mock the printf function to capture its output
 printf() {
-  _captured_printf_output+=$(command printf '%b' "$@")
+  local formatted_output
+  formatted_output=$(command printf -- "$@")
+  _captured_printf_output+="$formatted_output"
 }
 
 # Mock the read function for interactive input
@@ -37,16 +37,22 @@ reset_mocks() {
   _mock_input_array=()
 }
 
-setUp() {
-  reset_mocks
+oneTimeSetUp() {
   # Create a temporary directory for Git tests
   _test_git_root="$(mktemp -d)"
   export GIT_TOPLEVEL_DIR="$_test_git_root"
   mkdir -p "$_test_git_root/.git"
+  (cd "$_test_git_root" && git init --quiet)
   # Mimic a minimal Git repository state if needed for common mocks
   alias read=mock_read
   # Import functions for testing
-  source "$(dirname "$0")/../reword_commits.sh"
+  set +e # Disable exit on error temporarily to allow sourcing the script
+  source "$(dirname "$0")"/../reword_commits.sh
+  set -e # Re-enable exit on error
+}
+
+setUp() {
+  reset_mocks
 }
 
 tearDown() {
