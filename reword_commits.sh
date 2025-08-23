@@ -7,14 +7,16 @@
 # 2: Invalid command-line argument, invalid user input, or environment error (e.g., not in a Git
 #    repository, missing argument for --editor).
 
-readonly PROGNAME=$(basename "${BASH_SOURCE[0]}")
+if [[ -z "${PROGNAME+x}" ]]; then
+  PROGNAME_TEMP=$(basename "${BASH_SOURCE[0]}")
+  readonly PROGNAME="${PROGNAME_TEMP}"
+fi
 
 # Function: display_help
 # Description: Displays the script's help message, including usage, available options, and examples.
 # Arguments: None
 # Exit Code: 0 (Always exits after displaying help).
 display_help() {
-    printf "\n"
     printf "Usage: %s [OPTIONS]\n" "$PROGNAME" # Dynamically uses script name for usage.
     printf "Script for interactively rewriting Git commit messages.\n"
     printf "\n"
@@ -29,7 +31,6 @@ display_help() {
     printf "  %s --editor=vim\n" "$PROGNAME"
     printf "  %s -e code --wait\n" "$PROGNAME"
     printf "  %s --default\n" "$PROGNAME"
-    printf "\n"
     exit 0
 }
 
