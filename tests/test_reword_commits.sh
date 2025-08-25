@@ -49,6 +49,7 @@ oneTimeSetUp() {
   # Import functions for testing
   set +e # Temporarily disable exit on error to allow sourcing the script
   # shellcheck source=../reword_commits.sh
+  # shellcheck disable=SC1091
   source "$(dirname "$0")"/../reword_commits.sh
   set -e # Re-enable exit on error
 }
@@ -604,4 +605,6 @@ test_main_stash_fail() {
 }
 
 # Run shunit2
+# shellcheck source=shunit2/shunit2
+# shellcheck disable=SC1091
 . "$SHUNIT2_PATH" 
